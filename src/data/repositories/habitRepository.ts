@@ -34,7 +34,7 @@ type HabitRow = {
 /**
  * Converts DB frequency_type and frequency_value to a domain Frequency object.
  *
- * @throws Error if frequency_type is not recognized
+ * @throws Error if frequency_type is not recognized or frequency_value is invalid
  */
 export function toFrequency(
   frequencyType: string,
@@ -43,13 +43,25 @@ export function toFrequency(
   switch (frequencyType) {
     case 'daily':
       return { type: 'daily' };
-    case 'weekly_days':
-      return {
-        type: 'weekly_days',
-        days: JSON.parse(frequencyValue) as number[],
-      };
-    case 'weekly_count':
-      return { type: 'weekly_count', count: Number(frequencyValue) };
+    case 'weekly_days': {
+      try {
+        const days = JSON.parse(frequencyValue) as number[];
+        return { type: 'weekly_days', days };
+      } catch {
+        throw new Error(
+          `Invalid frequency_value for weekly_days: ${frequencyValue}`
+        );
+      }
+    }
+    case 'weekly_count': {
+      const count = Number(frequencyValue);
+      if (Number.isNaN(count)) {
+        throw new Error(
+          `Invalid frequency_value for weekly_count: ${frequencyValue}`
+        );
+      }
+      return { type: 'weekly_count', count };
+    }
     default:
       throw new Error(`Unknown frequency type: ${frequencyType}`);
   }
@@ -96,14 +108,15 @@ function toHabit(row: HabitRow): Habit {
 
 /**
  * Interface for habit persistence operations.
+ * All methods return Promises for future compatibility with async storage backends.
  */
 export type HabitRepository = {
-  readonly findAll: () => Habit[];
-  readonly findById: (id: string) => Habit | null;
-  readonly create: (input: CreateHabitInput) => Habit;
-  readonly update: (id: string, input: UpdateHabitInput) => Habit | null;
-  readonly archive: (id: string) => void;
-  readonly findArchived: () => Habit[];
+  readonly findAll: () => Promise<Habit[]>;
+  readonly findById: (id: string) => Promise<Habit | null>;
+  readonly create: (input: CreateHabitInput) => Promise<Habit>;
+  readonly update: (id: string, input: UpdateHabitInput) => Promise<Habit | null>;
+  readonly archive: (id: string) => Promise<void>;
+  readonly findArchived: () => Promise<Habit[]>;
 };
 
 // --- Repository implementation ---
@@ -116,6 +129,7 @@ type TimestampGenerator = () => string;
  *
  * Uses dependency injection for ID and timestamp generation
  * to support deterministic testing.
+ * Wraps synchronous expo-sqlite operations in Promises for interface compliance.
  */
 export class HabitRepositoryImpl implements HabitRepository {
   private readonly db: SQLiteDatabase;
@@ -132,14 +146,14 @@ export class HabitRepositoryImpl implements HabitRepository {
     this.generateTimestamp = generateTimestamp ?? (() => new Date().toISOString());
   }
 
-  findAll(): Habit[] {
+  async findAll(): Promise<Habit[]> {
     const rows = this.db.getAllSync<HabitRow>(
       'SELECT id, name, frequency_type, frequency_value, color, created_at, archived_at FROM habits WHERE archived_at IS NULL ORDER BY created_at ASC'
     );
     return rows.map(toHabit);
   }
 
-  findById(id: string): Habit | null {
+  async findById(id: string): Promise<Habit | null> {
     const row = this.db.getFirstSync<HabitRow>(
       'SELECT id, name, frequency_type, frequency_value, color, created_at, archived_at FROM habits WHERE id = ?',
       id
@@ -147,7 +161,7 @@ export class HabitRepositoryImpl implements HabitRepository {
     return row ? toHabit(row) : null;
   }
 
-  create(input: CreateHabitInput): Habit {
+  async create(input: CreateHabitInput): Promise<Habit> {
     const id = this.generateId();
     const createdAt = this.generateTimestamp();
     const { frequencyType, frequencyValue } = toFrequencyDbFields(
@@ -174,34 +188,30 @@ export class HabitRepositoryImpl implements HabitRepository {
     };
   }
 
-  update(id: string, input: UpdateHabitInput): Habit | null {
-    const setClauses: string[] = [];
-    const params: string[] = [];
+  async update(id: string, input: UpdateHabitInput): Promise<Habit | null> {
+    const fields = [
+      ...(input.name !== undefined
+        ? [{ clause: 'name = ?', value: input.name }]
+        : []),
+      ...(input.color !== undefined
+        ? [{ clause: 'color = ?', value: input.color }]
+        : []),
+      ...(input.frequency !== undefined
+        ? (() => {
+            const { frequencyType, frequencyValue } = toFrequencyDbFields(input.frequency);
+            return [
+              { clause: 'frequency_type = ?', value: frequencyType },
+              { clause: 'frequency_value = ?', value: frequencyValue },
+            ];
+          })()
+        : []),
+    ];
 
-    if (input.name !== undefined) {
-      setClauses.push('name = ?');
-      params.push(input.name);
-    }
-
-    if (input.color !== undefined) {
-      setClauses.push('color = ?');
-      params.push(input.color);
-    }
-
-    if (input.frequency !== undefined) {
-      const { frequencyType, frequencyValue } = toFrequencyDbFields(
-        input.frequency
-      );
-      setClauses.push('frequency_type = ?');
-      params.push(frequencyType);
-      setClauses.push('frequency_value = ?');
-      params.push(frequencyValue);
-    }
-
-    if (setClauses.length > 0) {
-      params.push(id);
+    if (fields.length > 0) {
+      const setClauses = fields.map(f => f.clause).join(', ');
+      const params = [...fields.map(f => f.value), id];
       this.db.runSync(
-        `UPDATE habits SET ${setClauses.join(', ')} WHERE id = ?`,
+        `UPDATE habits SET ${setClauses} WHERE id = ?`,
         ...params
       );
     }
@@ -209,7 +219,7 @@ export class HabitRepositoryImpl implements HabitRepository {
     return this.findById(id);
   }
 
-  archive(id: string): void {
+  async archive(id: string): Promise<void> {
     const archivedAt = this.generateTimestamp();
     this.db.runSync(
       'UPDATE habits SET archived_at = ? WHERE id = ?',
@@ -218,7 +228,7 @@ export class HabitRepositoryImpl implements HabitRepository {
     );
   }
 
-  findArchived(): Habit[] {
+  async findArchived(): Promise<Habit[]> {
     const rows = this.db.getAllSync<HabitRow>(
       'SELECT id, name, frequency_type, frequency_value, color, created_at, archived_at FROM habits WHERE archived_at IS NOT NULL ORDER BY created_at ASC'
     );

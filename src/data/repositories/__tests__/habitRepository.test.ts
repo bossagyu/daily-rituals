@@ -85,6 +85,18 @@ describe('toFrequency', () => {
       'Unknown frequency type: unknown'
     );
   });
+
+  it('should throw for invalid weekly_days JSON', () => {
+    expect(() => toFrequency('weekly_days', 'not-valid-json')).toThrow(
+      'Invalid frequency_value for weekly_days: not-valid-json'
+    );
+  });
+
+  it('should throw for invalid weekly_count value', () => {
+    expect(() => toFrequency('weekly_count', 'abc')).toThrow(
+      'Invalid frequency_value for weekly_count: abc'
+    );
+  });
 });
 
 describe('toFrequencyDbFields', () => {
@@ -129,13 +141,13 @@ describe('HabitRepositoryImpl', () => {
   });
 
   describe('findAll', () => {
-    it('should return active habits (archived_at IS NULL)', () => {
+    it('should return active habits (archived_at IS NULL)', async () => {
       mockDb.getAllSync.mockReturnValue([
         SAMPLE_DAILY_HABIT_ROW,
         SAMPLE_WEEKLY_DAYS_ROW,
       ]);
 
-      const result = repository.findAll();
+      const result = await repository.findAll();
 
       expect(mockDb.getAllSync).toHaveBeenCalledWith(
         expect.stringContaining('archived_at IS NULL')
@@ -159,20 +171,20 @@ describe('HabitRepositoryImpl', () => {
       });
     });
 
-    it('should return empty array when no habits exist', () => {
+    it('should return empty array when no habits exist', async () => {
       mockDb.getAllSync.mockReturnValue([]);
 
-      const result = repository.findAll();
+      const result = await repository.findAll();
 
       expect(result).toEqual([]);
     });
   });
 
   describe('findById', () => {
-    it('should return habit when found', () => {
+    it('should return habit when found', async () => {
       mockDb.getFirstSync.mockReturnValue(SAMPLE_DAILY_HABIT_ROW);
 
-      const result = repository.findById('habit-1');
+      const result = await repository.findById('habit-1');
 
       expect(mockDb.getFirstSync).toHaveBeenCalledWith(
         expect.stringContaining('WHERE id = ?'),
@@ -188,24 +200,24 @@ describe('HabitRepositoryImpl', () => {
       });
     });
 
-    it('should return null when habit not found', () => {
+    it('should return null when habit not found', async () => {
       mockDb.getFirstSync.mockReturnValue(null);
 
-      const result = repository.findById('non-existent');
+      const result = await repository.findById('non-existent');
 
       expect(result).toBeNull();
     });
   });
 
   describe('create', () => {
-    it('should insert a new habit and return it', () => {
+    it('should insert a new habit and return it', async () => {
       const input: CreateHabitInput = {
         name: 'Meditation',
         frequency: { type: 'daily' },
         color: '#AABBCC',
       };
 
-      const result = repository.create(input);
+      const result = await repository.create(input);
 
       expect(mockDb.runSync).toHaveBeenCalledWith(
         expect.stringContaining('INSERT INTO habits'),
@@ -226,14 +238,14 @@ describe('HabitRepositoryImpl', () => {
       });
     });
 
-    it('should create a habit with weekly_days frequency', () => {
+    it('should create a habit with weekly_days frequency', async () => {
       const input: CreateHabitInput = {
         name: 'Gym',
         frequency: { type: 'weekly_days', days: [1, 3, 5] },
         color: '#112233',
       };
 
-      const result = repository.create(input);
+      const result = await repository.create(input);
 
       expect(mockDb.runSync).toHaveBeenCalledWith(
         expect.stringContaining('INSERT INTO habits'),
@@ -250,14 +262,14 @@ describe('HabitRepositoryImpl', () => {
       });
     });
 
-    it('should create a habit with weekly_count frequency', () => {
+    it('should create a habit with weekly_count frequency', async () => {
       const input: CreateHabitInput = {
         name: 'Journal',
         frequency: { type: 'weekly_count', count: 3 },
         color: '#445566',
       };
 
-      const result = repository.create(input);
+      const result = await repository.create(input);
 
       expect(mockDb.runSync).toHaveBeenCalledWith(
         expect.stringContaining('INSERT INTO habits'),
@@ -273,13 +285,13 @@ describe('HabitRepositoryImpl', () => {
   });
 
   describe('update', () => {
-    it('should update habit name and return updated habit', () => {
+    it('should update habit name and return updated habit', async () => {
       mockDb.getFirstSync.mockReturnValue({
         ...SAMPLE_DAILY_HABIT_ROW,
         name: 'Evening Run',
       });
 
-      const result = repository.update('habit-1', { name: 'Evening Run' });
+      const result = await repository.update('habit-1', { name: 'Evening Run' });
 
       expect(mockDb.runSync).toHaveBeenCalledWith(
         expect.stringContaining('UPDATE habits SET'),
@@ -290,7 +302,7 @@ describe('HabitRepositoryImpl', () => {
       expect(result!.name).toBe('Evening Run');
     });
 
-    it('should update habit frequency', () => {
+    it('should update habit frequency', async () => {
       const updatedRow: HabitRow = {
         ...SAMPLE_DAILY_HABIT_ROW,
         frequency_type: 'weekly_count',
@@ -298,7 +310,7 @@ describe('HabitRepositoryImpl', () => {
       };
       mockDb.getFirstSync.mockReturnValue(updatedRow);
 
-      const result = repository.update('habit-1', {
+      const result = await repository.update('habit-1', {
         frequency: { type: 'weekly_count', count: 5 },
       });
 
@@ -306,7 +318,7 @@ describe('HabitRepositoryImpl', () => {
       expect(result!.frequency).toEqual({ type: 'weekly_count', count: 5 });
     });
 
-    it('should update multiple fields at once', () => {
+    it('should update multiple fields at once', async () => {
       const updatedRow: HabitRow = {
         ...SAMPLE_DAILY_HABIT_ROW,
         name: 'Updated',
@@ -314,7 +326,7 @@ describe('HabitRepositoryImpl', () => {
       };
       mockDb.getFirstSync.mockReturnValue(updatedRow);
 
-      const result = repository.update('habit-1', {
+      const result = await repository.update('habit-1', {
         name: 'Updated',
         color: '#999999',
       });
@@ -324,27 +336,52 @@ describe('HabitRepositoryImpl', () => {
       expect(result!.color).toBe('#999999');
     });
 
-    it('should return null when habit to update is not found', () => {
+    it('should return null when habit to update is not found', async () => {
       mockDb.getFirstSync.mockReturnValue(null);
 
-      const result = repository.update('non-existent', { name: 'Test' });
+      const result = await repository.update('non-existent', { name: 'Test' });
 
       expect(result).toBeNull();
     });
 
-    it('should not execute update when no fields provided', () => {
+    it('should not execute update when no fields provided', async () => {
       mockDb.getFirstSync.mockReturnValue(SAMPLE_DAILY_HABIT_ROW);
 
-      const result = repository.update('habit-1', {});
+      const result = await repository.update('habit-1', {});
 
       // Should still fetch the habit but not run UPDATE
       expect(result).not.toBeNull();
     });
+
+    it('should build update query immutably without array mutation', async () => {
+      mockDb.getFirstSync.mockReturnValue({
+        ...SAMPLE_DAILY_HABIT_ROW,
+        name: 'New Name',
+        color: '#ABCDEF',
+        frequency_type: 'weekly_days',
+        frequency_value: '[0,6]',
+      });
+
+      await repository.update('habit-1', {
+        name: 'New Name',
+        color: '#ABCDEF',
+        frequency: { type: 'weekly_days', days: [0, 6] },
+      });
+
+      expect(mockDb.runSync).toHaveBeenCalledWith(
+        'UPDATE habits SET name = ?, color = ?, frequency_type = ?, frequency_value = ? WHERE id = ?',
+        'New Name',
+        '#ABCDEF',
+        'weekly_days',
+        '[0,6]',
+        'habit-1'
+      );
+    });
   });
 
   describe('archive', () => {
-    it('should set archived_at to current timestamp', () => {
-      repository.archive('habit-1');
+    it('should set archived_at to current timestamp', async () => {
+      await repository.archive('habit-1');
 
       expect(mockDb.runSync).toHaveBeenCalledWith(
         expect.stringContaining('UPDATE habits SET archived_at = ?'),
@@ -355,10 +392,10 @@ describe('HabitRepositoryImpl', () => {
   });
 
   describe('findArchived', () => {
-    it('should return only archived habits', () => {
+    it('should return only archived habits', async () => {
       mockDb.getAllSync.mockReturnValue([SAMPLE_WEEKLY_COUNT_ROW]);
 
-      const result = repository.findArchived();
+      const result = await repository.findArchived();
 
       expect(mockDb.getAllSync).toHaveBeenCalledWith(
         expect.stringContaining('archived_at IS NOT NULL')
@@ -372,6 +409,41 @@ describe('HabitRepositoryImpl', () => {
         createdAt: '2026-01-03T00:00:00.000Z',
         archivedAt: '2026-02-01T00:00:00.000Z',
       });
+    });
+  });
+
+  describe('async behavior', () => {
+    it('should return Promises from all methods', async () => {
+      mockDb.getAllSync.mockReturnValue([]);
+      mockDb.getFirstSync.mockReturnValue(null);
+
+      const findAllResult = repository.findAll();
+      const findByIdResult = repository.findById('id');
+      const createResult = repository.create({
+        name: 'Test',
+        frequency: { type: 'daily' },
+        color: '#000000',
+      });
+      const updateResult = repository.update('id', {});
+      const archiveResult = repository.archive('id');
+      const findArchivedResult = repository.findArchived();
+
+      expect(findAllResult).toBeInstanceOf(Promise);
+      expect(findByIdResult).toBeInstanceOf(Promise);
+      expect(createResult).toBeInstanceOf(Promise);
+      expect(updateResult).toBeInstanceOf(Promise);
+      expect(archiveResult).toBeInstanceOf(Promise);
+      expect(findArchivedResult).toBeInstanceOf(Promise);
+
+      // Await all to avoid unhandled promise warnings
+      await Promise.all([
+        findAllResult,
+        findByIdResult,
+        createResult,
+        updateResult,
+        archiveResult,
+        findArchivedResult,
+      ]);
     });
   });
 });
