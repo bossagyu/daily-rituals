@@ -5,6 +5,7 @@
  * for consistency with the application's data access patterns.
  */
 
+import { randomUUID } from 'crypto';
 import type { SQLiteDatabase } from 'expo-sqlite';
 import type { Completion } from '../../domain/models';
 
@@ -46,9 +47,7 @@ export interface CompletionRepository {
 }
 
 function generateId(): string {
-  const timestamp = Date.now().toString(36);
-  const random = Math.random().toString(36).substring(2, 10);
-  return `${timestamp}-${random}`;
+  return randomUUID();
 }
 
 function validateHabitId(habitId: string): void {
@@ -60,6 +59,20 @@ function validateHabitId(habitId: string): void {
 function validateDateFormat(date: string, fieldName: string): void {
   if (!DATE_FORMAT_REGEX.test(date)) {
     throw new Error(`${fieldName} must be in YYYY-MM-DD format`);
+  }
+
+  const parsed = new Date(`${date}T00:00:00Z`);
+  if (isNaN(parsed.getTime())) {
+    throw new Error(`${fieldName} is not a valid date: ${date}`);
+  }
+
+  const [year, month, day] = date.split('-').map(Number);
+  if (
+    parsed.getUTCFullYear() !== year ||
+    parsed.getUTCMonth() + 1 !== month ||
+    parsed.getUTCDate() !== day
+  ) {
+    throw new Error(`${fieldName} is not a valid date: ${date}`);
   }
 }
 

@@ -122,6 +122,12 @@ describe('CompletionRepositoryImpl', () => {
       await expect(repository.findByDate('03-14-2026')).rejects.toThrow();
       await expect(repository.findByDate('')).rejects.toThrow();
     });
+
+    it('should reject semantically invalid dates', async () => {
+      await expect(repository.findByDate('2026-13-45')).rejects.toThrow();
+      await expect(repository.findByDate('2026-02-30')).rejects.toThrow();
+      await expect(repository.findByDate('2026-00-01')).rejects.toThrow();
+    });
   });
 
   describe('findByHabitIdAndDateRange', () => {
