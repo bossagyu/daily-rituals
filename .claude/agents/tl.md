@@ -78,10 +78,15 @@ model: opus
 
 ## 技術スタックに関する権限
 
-- React Native + Expo
+- Vite + React
 - TypeScript（strictモード）
-- expo-sqlite（ローカルデータ）
-- Jest（テスト）
+- Supabase（PostgreSQL + 認証）
+- Tailwind CSS + shadcn/ui（UIフレームワーク）
+- Supabase Auth（Google OAuth 認証）
+- Vitest（ユニット・統合テスト）
+- Playwright（E2Eテスト）
+- Vercel（ホスティング）
+- vite-plugin-pwa（PWA対応）
 
 以下について最終決定権を持つ：
 - ライブラリの選定とバージョン決定
