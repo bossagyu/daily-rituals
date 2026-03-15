@@ -14,6 +14,7 @@ const makeCompletion = (
   completedDate: string,
 ): Completion => ({
   id: `comp-${habitId}-${completedDate}`,
+  userId: 'user-abc-123',
   habitId,
   completedDate,
   createdAt: `${completedDate}T12:00:00Z`,

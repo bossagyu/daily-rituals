@@ -14,6 +14,7 @@ import { HabitsManager, type HabitsState } from '../habitsManager';
 
 const SAMPLE_HABIT_1: Habit = {
   id: 'habit-1',
+  userId: 'user-abc-123',
   name: 'Morning Run',
   frequency: { type: 'daily' },
   color: '#FF0000',
@@ -23,6 +24,7 @@ const SAMPLE_HABIT_1: Habit = {
 
 const SAMPLE_HABIT_2: Habit = {
   id: 'habit-2',
+  userId: 'user-abc-123',
   name: 'Yoga',
   frequency: { type: 'weekly_days', days: [1, 3, 5] },
   color: '#00FF00',
@@ -119,12 +121,14 @@ describe('HabitsManager', () => {
   describe('createHabit', () => {
     it('should create a habit and refresh the list', async () => {
       const input: CreateHabitInput = {
+        userId: 'user-abc-123',
         name: 'Meditation',
         frequency: { type: 'daily' },
         color: '#AABBCC',
       };
       const createdHabit: Habit = {
         id: 'new-id',
+        userId: 'user-abc-123',
         name: 'Meditation',
         frequency: { type: 'daily' },
         color: '#AABBCC',
@@ -146,6 +150,7 @@ describe('HabitsManager', () => {
       mockRepo.create.mockRejectedValue(new Error('Insert failed'));
 
       await manager.createHabit({
+        userId: 'user-abc-123',
         name: 'Test',
         frequency: { type: 'daily' },
         color: '#000000',
