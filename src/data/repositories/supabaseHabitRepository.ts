@@ -24,7 +24,11 @@ const toDomainHabit = (row: HabitRow): Habit => ({
   name: row.name,
   frequency: toFrequency(
     row.frequency_type,
-    row.frequency_value != null ? String(row.frequency_value) : '{}',
+    row.frequency_value != null
+      ? typeof row.frequency_value === 'string'
+        ? row.frequency_value
+        : JSON.stringify(row.frequency_value)
+      : '{}',
   ),
   color: row.color,
   createdAt: row.created_at,

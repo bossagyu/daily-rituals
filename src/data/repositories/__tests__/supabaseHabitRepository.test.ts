@@ -67,7 +67,7 @@ const weeklyDaysRow: HabitRow = {
   user_id: USER_ID,
   name: 'Gym',
   frequency_type: 'weekly_days',
-  frequency_value: '[1,3,5]',
+  frequency_value: [1, 3, 5],
   color: '#00FF00',
   created_at: '2026-01-02T00:00:00Z',
   archived_at: null,
@@ -78,7 +78,7 @@ const weeklyCountRow: HabitRow = {
   user_id: USER_ID,
   name: 'Read',
   frequency_type: 'weekly_count',
-  frequency_value: '3',
+  frequency_value: 3,
   color: '#0000FF',
   created_at: '2026-01-03T00:00:00Z',
   archived_at: null,
@@ -269,7 +269,7 @@ describe('SupabaseHabitRepository', () => {
       const updatedRow: HabitRow = {
         ...sampleHabitRow,
         frequency_type: 'weekly_count',
-        frequency_value: '5',
+        frequency_value: 5,
       };
       mock.chain.single.mockResolvedValue({
         data: updatedRow,
