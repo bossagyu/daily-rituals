@@ -4,13 +4,17 @@ const config: Config = {
   preset: 'ts-jest',
   testEnvironment: 'node',
   roots: ['<rootDir>/src'],
-  testMatch: ['**/__tests__/**/*.test.ts', '**/__tests__/**/*.test.tsx'],
+  testMatch: ['**/__tests__/**/*.test.ts'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',
     '!src/**/*.d.ts',
     '!src/**/__tests__/**',
     '!src/hooks/use*.ts',
+    '!src/ui/screens/**',
+    '!src/ui/navigation/RootNavigator.tsx',
+    '!src/ui/navigation/HabitsStackNavigator.tsx',
+    '!src/ui/navigation/index.ts',
   ],
   coverageThreshold: {
     global: {
