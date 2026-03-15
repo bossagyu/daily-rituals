@@ -12,6 +12,8 @@ import {
   type WeeklyProgress,
 } from '../domain/services/frequencyService';
 
+export { extractErrorMessage } from './utils';
+
 // --- Constants ---
 
 const MS_PER_DAY = 86400000;
@@ -67,9 +69,3 @@ export function updateCompletionsCache(
   return newCache;
 }
 
-/**
- * Extracts an error message from an unknown error value.
- */
-export function extractErrorMessage(err: unknown): string {
-  return err instanceof Error ? err.message : String(err);
-}

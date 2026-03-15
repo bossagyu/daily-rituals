@@ -8,6 +8,8 @@
 import type { CompletionRepository } from '../data/repositories';
 import type { Completion } from '../domain/models';
 
+export { extractErrorMessage } from './utils';
+
 /**
  * Creates a function that checks whether a specific habit is completed on a given date.
  */
@@ -55,9 +57,3 @@ export async function loadCompletionsByDate(
   return repository.findByDate(date);
 }
 
-/**
- * Extracts an error message from an unknown error value.
- */
-export function extractErrorMessage(err: unknown): string {
-  return err instanceof Error ? err.message : String(err);
-}

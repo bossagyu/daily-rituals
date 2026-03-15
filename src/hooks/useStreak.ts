@@ -4,16 +4,19 @@
  * Uses StreakService and FrequencyService from the domain layer.
  * Caches completions per habit for efficient recalculation.
  * Business logic is in streakOperations.ts for testability.
+ *
+ * Note: getStreak and getWeeklyProgress accept habitId (string) as per issue #9.
+ * Internally, the hook resolves the Habit object from the provided habits array,
+ * since StreakService requires frequency information for streak calculation.
  */
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import type { CompletionRepository } from '../data/repositories';
 import type { Habit, Completion, Streak } from '../domain/models';
 import type { WeeklyProgress } from '../domain/services/frequencyService';
 import {
   computeStreakForHabit,
   computeWeeklyProgressForHabit,
-  updateCompletionsCache,
   extractErrorMessage,
 } from './streakOperations';
 
@@ -36,8 +39,8 @@ const INITIAL_STATE: StreakState = {
 export type UseStreakResult = {
   readonly loading: boolean;
   readonly error: string | null;
-  readonly getStreak: (habit: Habit) => Streak;
-  readonly getWeeklyProgress: (habit: Habit) => WeeklyProgress;
+  readonly getStreak: (habitId: string) => Streak;
+  readonly getWeeklyProgress: (habitId: string) => WeeklyProgress;
   readonly refreshStreak: (habitId: string) => Promise<void>;
 };
 
@@ -46,10 +49,19 @@ const EMPTY_PROGRESS: WeeklyProgress = Object.freeze({ done: 0, target: 0 });
 
 export function useStreak(
   repository: CompletionRepository,
+  habits: readonly Habit[],
   today: string,
 ): UseStreakResult {
   const [state, setState] = useState<StreakState>(INITIAL_STATE);
   const cacheRef = useRef<Map<string, readonly Completion[]>>(new Map());
+
+  const habitsMap = useMemo(() => {
+    const map = new Map<string, Habit>();
+    for (const habit of habits) {
+      map.set(habit.id, habit);
+    }
+    return map;
+  }, [habits]);
 
   const fetchCompletions = useCallback(
     async (habitId: string): Promise<readonly Completion[]> => {
@@ -90,27 +102,35 @@ export function useStreak(
   );
 
   const getStreak = useCallback(
-    (habit: Habit): Streak => {
-      const cached = cacheRef.current.get(habit.id);
+    (habitId: string): Streak => {
+      const habit = habitsMap.get(habitId);
+      if (habit === undefined) {
+        return EMPTY_STREAK;
+      }
+      const cached = cacheRef.current.get(habitId);
       if (cached === undefined) {
-        ensureCompletions(habit.id);
+        ensureCompletions(habitId);
         return EMPTY_STREAK;
       }
       return computeStreakForHabit(habit, cached, today);
     },
-    [today, ensureCompletions],
+    [today, ensureCompletions, habitsMap],
   );
 
   const getWeeklyProgressFn = useCallback(
-    (habit: Habit): WeeklyProgress => {
-      const cached = cacheRef.current.get(habit.id);
+    (habitId: string): WeeklyProgress => {
+      const habit = habitsMap.get(habitId);
+      if (habit === undefined) {
+        return EMPTY_PROGRESS;
+      }
+      const cached = cacheRef.current.get(habitId);
       if (cached === undefined) {
-        ensureCompletions(habit.id);
+        ensureCompletions(habitId);
         return EMPTY_PROGRESS;
       }
       return computeWeeklyProgressForHabit(habit, cached, today);
     },
-    [today, ensureCompletions],
+    [today, ensureCompletions, habitsMap],
   );
 
   const refreshStreak = useCallback(

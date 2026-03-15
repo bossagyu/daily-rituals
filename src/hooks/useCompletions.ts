@@ -5,7 +5,7 @@
  * Business logic is in completionOperations.ts for testability.
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { CompletionRepository } from '../data/repositories';
 import type { Completion } from '../domain/models';
 import {
@@ -44,6 +44,8 @@ export function useCompletions(
   date: string,
 ): UseCompletionsResult {
   const [state, setState] = useState<CompletionsState>(INITIAL_STATE);
+  const completionsRef = useRef<readonly Completion[]>(state.completions);
+  completionsRef.current = state.completions;
 
   useEffect(() => {
     let cancelled = false;
@@ -80,7 +82,7 @@ export function useCompletions(
       try {
         const newCompletions = await performToggle(
           repository,
-          state.completions,
+          completionsRef.current,
           habitId,
           toggleDate,
         );
@@ -89,7 +91,7 @@ export function useCompletions(
         setState((prev) => ({ ...prev, error: extractErrorMessage(err) }));
       }
     },
-    [repository, state.completions],
+    [repository],
   );
 
   return {
