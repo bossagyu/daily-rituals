@@ -1,73 +1,85 @@
 import React from 'react';
-import { Routes, Route, useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { AuthGuard } from '@/ui/components/AuthGuard';
-import { useAuth } from '@/hooks/useAuth';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuthContext } from '@/hooks/useAuthContext';
+import { RepositoryProvider } from '@/hooks/useRepositories';
+import { LoginPage } from '@/ui/pages/LoginPage';
+import { AppLayout } from '@/ui/layouts/AppLayout';
+import { TodayPage } from '@/ui/pages/TodayPage';
+import { HabitsPage } from '@/ui/pages/HabitsPage';
+import { NewHabitPage } from '@/ui/pages/NewHabitPage';
+import { HabitDetailPage } from '@/ui/pages/HabitDetailPage';
 import { createSupabaseClient } from '@/lib/supabase';
 
 const supabaseClient = createSupabaseClient();
 
-function HomePage() {
-  const navigate = useNavigate();
-
+/**
+ * Renders a loading screen while auth state is being determined.
+ */
+function LoadingScreen() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-background">
-      <h1 className="mb-4 text-4xl font-bold text-foreground">
-        Daily Rituals
-      </h1>
-      <p className="mb-8 text-muted-foreground">
-        Build better habits, one day at a time.
-      </p>
-      <Button onClick={() => navigate('/habits')}>View Habits</Button>
+    <div className="flex min-h-screen items-center justify-center bg-background">
+      <p className="text-muted-foreground">Loading...</p>
     </div>
   );
 }
 
-function HabitsPage() {
-  const navigate = useNavigate();
+/**
+ * ProtectedRoute - Redirects to login page if user is not authenticated.
+ * Wraps children with RepositoryProvider when authenticated.
+ */
+function ProtectedRoute({ children }: { readonly children: React.ReactNode }) {
+  const { user, isLoading } = useAuthContext();
+
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
 
   return (
-    <div className="min-h-screen bg-background p-8">
-      <h1 className="mb-4 text-2xl font-bold text-foreground">Habits</h1>
-      <Button onClick={() => navigate('/habits/new')}>New Habit</Button>
-    </div>
+    <RepositoryProvider client={supabaseClient} userId={user.id}>
+      {children}
+    </RepositoryProvider>
   );
 }
 
-function NewHabitPage() {
-  return (
-    <div className="min-h-screen bg-background p-8">
-      <h1 className="text-2xl font-bold text-foreground">New Habit</h1>
-    </div>
-  );
-}
+/**
+ * LoginRoute - Redirects to home if user is already authenticated.
+ */
+function LoginRoute() {
+  const { user, isLoading, error, signIn } = useAuthContext();
 
-function HabitDetailPage() {
-  return (
-    <div className="min-h-screen bg-background p-8">
-      <h1 className="text-2xl font-bold text-foreground">Habit Detail</h1>
-    </div>
-  );
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
+
+  if (user) {
+    return <Navigate to="/" replace />;
+  }
+
+  return <LoginPage onSignIn={signIn} error={error} isLoading={false} />;
 }
 
 export function App() {
-  const { user, isLoading, error, signIn, signOut } =
-    useAuth(supabaseClient);
-
   return (
-    <AuthGuard
-      user={user}
-      isLoading={isLoading}
-      error={error}
-      onSignIn={signIn}
-      onSignOut={signOut}
-    >
+    <AuthProvider client={supabaseClient}>
       <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/habits" element={<HabitsPage />} />
-        <Route path="/habits/new" element={<NewHabitPage />} />
-        <Route path="/habits/:id" element={<HabitDetailPage />} />
+        <Route path="/login" element={<LoginRoute />} />
+        <Route
+          element={
+            <ProtectedRoute>
+              <AppLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route path="/" element={<TodayPage />} />
+          <Route path="/habits" element={<HabitsPage />} />
+          <Route path="/habits/new" element={<NewHabitPage />} />
+          <Route path="/habits/:id" element={<HabitDetailPage />} />
+        </Route>
       </Routes>
-    </AuthGuard>
+    </AuthProvider>
   );
 }
