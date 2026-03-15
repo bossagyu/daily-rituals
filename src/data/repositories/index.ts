@@ -3,3 +3,6 @@ export { toFrequency, toFrequencyDbFields } from './habitRepository';
 
 export type { CompletionRepository } from './completionRepository';
 export { DuplicateCompletionError } from './completionRepository';
+
+export { createSupabaseHabitRepository } from './supabaseHabitRepository';
+export { createSupabaseCompletionRepository } from './supabaseCompletionRepository';
