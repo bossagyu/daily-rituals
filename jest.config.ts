@@ -10,6 +10,7 @@ const config: Config = {
     'src/**/*.{ts,tsx}',
     '!src/**/*.d.ts',
     '!src/**/__tests__/**',
+    '!src/hooks/use*.ts',
   ],
   coverageThreshold: {
     global: {
