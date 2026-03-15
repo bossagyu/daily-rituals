@@ -11,10 +11,12 @@ const config: Config = {
     '!src/**/*.d.ts',
     '!src/**/__tests__/**',
     '!src/hooks/use*.ts',
-    '!src/ui/screens/**',
+    '!src/ui/screens/*Screen.tsx',
+    '!src/ui/screens/index.ts',
     '!src/ui/navigation/RootNavigator.tsx',
     '!src/ui/navigation/HabitsStackNavigator.tsx',
     '!src/ui/navigation/index.ts',
+    '!src/data/repositories/RepositoryContext.tsx',
   ],
   coverageThreshold: {
     global: {
