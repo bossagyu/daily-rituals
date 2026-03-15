@@ -35,6 +35,7 @@ export type Frequency = DailyFrequency | WeeklyDaysFrequency | WeeklyCountFreque
  */
 export type Habit = {
   readonly id: string;
+  readonly userId: string;
   readonly name: string;
   readonly frequency: Frequency;
   readonly color: string;
@@ -74,6 +75,7 @@ export const frequencySchema = z.discriminatedUnion('type', [
 
 export const habitSchema = z.object({
   id: z.string().min(1),
+  userId: z.string().min(1),
   name: z.string().min(1).max(HABIT_NAME_MAX_LENGTH),
   frequency: frequencySchema,
   color: z.string().min(1),
@@ -86,6 +88,7 @@ export const habitSchema = z.object({
  * Does not include id, createdAt, or archivedAt as those are system-generated.
  */
 export const createHabitInputSchema = z.object({
+  userId: z.string().min(1),
   name: z.string().min(1).max(HABIT_NAME_MAX_LENGTH),
   frequency: frequencySchema,
   color: z.string().min(1),

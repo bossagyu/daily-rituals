@@ -4,12 +4,14 @@ describe('Completion type', () => {
   it('should represent a habit completion', () => {
     const completion: Completion = {
       id: 'comp-1',
+      userId: 'user-abc-123',
       habitId: 'habit-1',
       completedDate: '2026-03-14',
       createdAt: '2026-03-14T08:30:00Z',
     };
 
     expect(completion.id).toBe('comp-1');
+    expect(completion.userId).toBe('user-abc-123');
     expect(completion.habitId).toBe('habit-1');
     expect(completion.completedDate).toBe('2026-03-14');
     expect(completion.createdAt).toBe('2026-03-14T08:30:00Z');
@@ -19,6 +21,7 @@ describe('Completion type', () => {
 describe('completionSchema', () => {
   const validCompletion = {
     id: 'comp-1',
+    userId: 'user-abc-123',
     habitId: 'habit-1',
     completedDate: '2026-03-14',
     createdAt: '2026-03-14T08:30:00Z',
@@ -36,6 +39,17 @@ describe('completionSchema', () => {
 
   it('should reject a completion with empty habitId', () => {
     const result = completionSchema.safeParse({ ...validCompletion, habitId: '' });
+    expect(result.success).toBe(false);
+  });
+
+  it('should reject a completion with empty userId', () => {
+    const result = completionSchema.safeParse({ ...validCompletion, userId: '' });
+    expect(result.success).toBe(false);
+  });
+
+  it('should reject a completion without userId', () => {
+    const { userId: _, ...completionWithoutUserId } = validCompletion;
+    const result = completionSchema.safeParse(completionWithoutUserId);
     expect(result.success).toBe(false);
   });
 

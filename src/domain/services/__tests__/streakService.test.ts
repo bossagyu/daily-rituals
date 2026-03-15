@@ -5,6 +5,7 @@ import { Habit, Completion } from '../../models';
 
 const makeHabit = (frequency: Habit['frequency']): Habit => ({
   id: 'habit-1',
+  userId: 'user-abc-123',
   name: 'Test Habit',
   frequency,
   color: '#FF0000',
@@ -14,6 +15,7 @@ const makeHabit = (frequency: Habit['frequency']): Habit => ({
 
 const makeCompletion = (habitId: string, completedDate: string): Completion => ({
   id: `comp-${completedDate}`,
+  userId: 'user-abc-123',
   habitId,
   completedDate,
   createdAt: `${completedDate}T12:00:00Z`,

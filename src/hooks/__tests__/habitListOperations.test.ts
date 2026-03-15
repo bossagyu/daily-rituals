@@ -15,6 +15,7 @@ import {
 
 const ACTIVE_HABIT_1: Habit = {
   id: 'habit-1',
+  userId: 'user-abc-123',
   name: 'Morning Run',
   frequency: { type: 'daily' },
   color: '#FF0000',
@@ -24,6 +25,7 @@ const ACTIVE_HABIT_1: Habit = {
 
 const ACTIVE_HABIT_2: Habit = {
   id: 'habit-2',
+  userId: 'user-abc-123',
   name: 'Yoga',
   frequency: { type: 'weekly_days', days: [1, 3, 5] },
   color: '#00FF00',
@@ -33,6 +35,7 @@ const ACTIVE_HABIT_2: Habit = {
 
 const ARCHIVED_HABIT_1: Habit = {
   id: 'habit-3',
+  userId: 'user-abc-123',
   name: 'Meditation',
   frequency: { type: 'daily' },
   color: '#0000FF',
@@ -42,6 +45,7 @@ const ARCHIVED_HABIT_1: Habit = {
 
 const ARCHIVED_HABIT_2: Habit = {
   id: 'habit-4',
+  userId: 'user-abc-123',
   name: 'Reading',
   frequency: { type: 'weekly_count', count: 3 },
   color: '#FFFF00',

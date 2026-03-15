@@ -156,8 +156,9 @@ import type { CreateHabitInput } from './habit';
  * Converts a validated HabitFormState to a CreateHabitInput.
  * Should only be called after validateHabitForm returns isValid: true.
  */
-export function toCreateHabitInput(state: HabitFormState): CreateHabitInput {
+export function toCreateHabitInput(state: HabitFormState, userId: string): CreateHabitInput {
   return {
+    userId,
     name: state.name.trim(),
     frequency: toFrequencyForInput(state),
     color: state.color,

@@ -3,6 +3,7 @@ import type { Habit, Completion } from '../../models';
 
 const BASE_HABIT: Habit = {
   id: 'habit-1',
+  userId: 'user-abc-123',
   name: 'Test Habit',
   frequency: { type: 'daily' },
   color: '#FF0000',
@@ -17,6 +18,7 @@ function makeHabit(overrides: Partial<Habit>): Habit {
 function makeCompletion(habitId: string, completedDate: string): Completion {
   return {
     id: `completion-${completedDate}`,
+    userId: 'user-abc-123',
     habitId,
     completedDate,
     createdAt: `${completedDate}T12:00:00Z`,

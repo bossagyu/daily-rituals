@@ -7,6 +7,7 @@ import type { Habit } from '../../models';
 
 const ACTIVE_HABIT_1: Habit = {
   id: 'h1',
+  userId: 'user-abc-123',
   name: 'Running',
   frequency: { type: 'daily' },
   color: '#FF0000',
@@ -16,6 +17,7 @@ const ACTIVE_HABIT_1: Habit = {
 
 const ACTIVE_HABIT_2: Habit = {
   id: 'h2',
+  userId: 'user-abc-123',
   name: 'Yoga',
   frequency: { type: 'weekly_days', days: [1, 3, 5] },
   color: '#00FF00',
@@ -25,6 +27,7 @@ const ACTIVE_HABIT_2: Habit = {
 
 const ARCHIVED_HABIT: Habit = {
   id: 'h3',
+  userId: 'user-abc-123',
   name: 'Meditation',
   frequency: { type: 'weekly_count', count: 3 },
   color: '#0000FF',

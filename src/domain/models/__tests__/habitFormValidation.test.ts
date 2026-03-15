@@ -169,9 +169,10 @@ describe('toCreateHabitInput', () => {
       color: PRESET_COLORS[0],
     };
 
-    const result = toCreateHabitInput(state);
+    const result = toCreateHabitInput(state, 'user-abc-123');
 
     expect(result).toEqual({
+      userId: 'user-abc-123',
       name: '読書',
       frequency: { type: 'daily' },
       color: PRESET_COLORS[0],
@@ -187,9 +188,10 @@ describe('toCreateHabitInput', () => {
       color: PRESET_COLORS[1],
     };
 
-    const result = toCreateHabitInput(state);
+    const result = toCreateHabitInput(state, 'user-abc-123');
 
     expect(result).toEqual({
+      userId: 'user-abc-123',
       name: '運動',
       frequency: { type: 'weekly_days', days: [1, 3, 5] },
       color: PRESET_COLORS[1],
@@ -205,9 +207,10 @@ describe('toCreateHabitInput', () => {
       color: PRESET_COLORS[2],
     };
 
-    const result = toCreateHabitInput(state);
+    const result = toCreateHabitInput(state, 'user-abc-123');
 
     expect(result).toEqual({
+      userId: 'user-abc-123',
       name: 'ジョギング',
       frequency: { type: 'weekly_count', count: 3 },
       color: PRESET_COLORS[2],
@@ -223,7 +226,7 @@ describe('toCreateHabitInput', () => {
       color: PRESET_COLORS[0],
     };
 
-    const result = toCreateHabitInput(state);
+    const result = toCreateHabitInput(state, 'user-abc-123');
     expect(result.name).toBe('読書');
   });
 });
@@ -232,6 +235,7 @@ describe('habitToFormState', () => {
   it('should convert daily habit to form state', () => {
     const habit: Habit = {
       id: '1',
+      userId: 'user-abc-123',
       name: '読書',
       frequency: { type: 'daily' },
       color: PRESET_COLORS[0],
@@ -253,6 +257,7 @@ describe('habitToFormState', () => {
   it('should convert weekly_days habit to form state', () => {
     const habit: Habit = {
       id: '2',
+      userId: 'user-abc-123',
       name: '運動',
       frequency: { type: 'weekly_days', days: [1, 3, 5] },
       color: PRESET_COLORS[1],
@@ -274,6 +279,7 @@ describe('habitToFormState', () => {
   it('should convert weekly_count habit to form state', () => {
     const habit: Habit = {
       id: '3',
+      userId: 'user-abc-123',
       name: 'ジョギング',
       frequency: { type: 'weekly_count', count: 3 },
       color: PRESET_COLORS[2],

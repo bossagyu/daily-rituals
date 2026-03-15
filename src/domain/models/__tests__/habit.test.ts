@@ -38,6 +38,7 @@ describe('Habit type', () => {
   it('should represent an active habit', () => {
     const habit: Habit = {
       id: 'habit-1',
+      userId: 'user-abc-123',
       name: 'Morning Run',
       frequency: { type: 'daily' },
       color: '#FF5733',
@@ -46,6 +47,7 @@ describe('Habit type', () => {
     };
 
     expect(habit.id).toBe('habit-1');
+    expect(habit.userId).toBe('user-abc-123');
     expect(habit.name).toBe('Morning Run');
     expect(habit.archivedAt).toBeNull();
   });
@@ -53,6 +55,7 @@ describe('Habit type', () => {
   it('should represent an archived habit', () => {
     const habit: Habit = {
       id: 'habit-2',
+      userId: 'user-abc-123',
       name: 'Reading',
       frequency: { type: 'weekly_count', count: 5 },
       color: '#33FF57',
@@ -137,6 +140,7 @@ describe('frequencySchema', () => {
 describe('habitSchema', () => {
   const validHabit = {
     id: 'habit-1',
+    userId: 'user-abc-123',
     name: 'Morning Run',
     frequency: { type: 'daily' as const },
     color: '#FF5733',
@@ -156,6 +160,17 @@ describe('habitSchema', () => {
 
   it('should reject a habit with empty id', () => {
     const result = habitSchema.safeParse({ ...validHabit, id: '' });
+    expect(result.success).toBe(false);
+  });
+
+  it('should reject a habit with empty userId', () => {
+    const result = habitSchema.safeParse({ ...validHabit, userId: '' });
+    expect(result.success).toBe(false);
+  });
+
+  it('should reject a habit without userId', () => {
+    const { userId: _, ...habitWithoutUserId } = validHabit;
+    const result = habitSchema.safeParse(habitWithoutUserId);
     expect(result.success).toBe(false);
   });
 
@@ -184,6 +199,7 @@ describe('habitSchema', () => {
 describe('createHabitInputSchema', () => {
   it('should validate a valid create input (without id, createdAt, archivedAt)', () => {
     const result = createHabitInputSchema.safeParse({
+      userId: 'user-abc-123',
       name: 'Morning Run',
       frequency: { type: 'daily' },
       color: '#FF5733',
@@ -193,6 +209,7 @@ describe('createHabitInputSchema', () => {
 
   it('should reject input with empty name', () => {
     const result = createHabitInputSchema.safeParse({
+      userId: 'user-abc-123',
       name: '',
       frequency: { type: 'daily' },
       color: '#FF5733',
@@ -202,6 +219,7 @@ describe('createHabitInputSchema', () => {
 
   it('should reject input with name exceeding max length', () => {
     const result = createHabitInputSchema.safeParse({
+      userId: 'user-abc-123',
       name: 'a'.repeat(101),
       frequency: { type: 'daily' },
       color: '#FF5733',
@@ -211,6 +229,7 @@ describe('createHabitInputSchema', () => {
 
   it('should reject input with missing frequency', () => {
     const result = createHabitInputSchema.safeParse({
+      userId: 'user-abc-123',
       name: 'Morning Run',
       color: '#FF5733',
     });
@@ -219,8 +238,28 @@ describe('createHabitInputSchema', () => {
 
   it('should reject input with missing color', () => {
     const result = createHabitInputSchema.safeParse({
+      userId: 'user-abc-123',
       name: 'Morning Run',
       frequency: { type: 'daily' },
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('should reject input with missing userId', () => {
+    const result = createHabitInputSchema.safeParse({
+      name: 'Morning Run',
+      frequency: { type: 'daily' },
+      color: '#FF5733',
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('should reject input with empty userId', () => {
+    const result = createHabitInputSchema.safeParse({
+      userId: '',
+      name: 'Morning Run',
+      frequency: { type: 'daily' },
+      color: '#FF5733',
     });
     expect(result.success).toBe(false);
   });
