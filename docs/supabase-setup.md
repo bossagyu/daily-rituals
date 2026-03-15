@@ -51,10 +51,44 @@ Supabase Dashboard の **SQL Editor** で `supabase/migrations/20260315000000_cr
 
 ## 4. 認証プロバイダーの設定（Google OAuth）
 
-1. **Authentication > Providers** で Google を有効化
-2. [Google Cloud Console](https://console.cloud.google.com/) で OAuth 2.0 クライアントIDを作成
-3. リダイレクトURIに `https://your-project-ref.supabase.co/auth/v1/callback` を追加
-4. Client ID と Client Secret を Supabase に設定
+### 4.1 Google Cloud Console での設定
+
+1. [Google Cloud Console](https://console.cloud.google.com/) にアクセス
+2. プロジェクトを作成または選択
+3. **APIs & Services > OAuth consent screen** で同意画面を設定
+   - User Type: External（テスト段階では「Testing」モードで可）
+   - アプリ名、サポートメール等を入力
+4. **APIs & Services > Credentials** に移動
+5. **Create Credentials > OAuth client ID** をクリック
+6. Application type: **Web application** を選択
+7. 以下を設定:
+   - **Authorized JavaScript origins**: `https://your-project-ref.supabase.co`
+   - **Authorized redirect URIs**: `https://your-project-ref.supabase.co/auth/v1/callback`
+8. **Create** をクリックし、**Client ID** と **Client Secret** をコピー
+
+### 4.2 Supabase Dashboard での設定
+
+1. Supabase Dashboard の **Authentication > Providers** に移動
+2. **Google** を展開し、**Enable Sign in with Google** をON
+3. Google Cloud Console でコピーした **Client ID** と **Client Secret** を入力
+4. **Authorized Client IDs** にはフロントエンドで使用するクライアントIDを入力（任意）
+5. **Save** をクリック
+
+### 4.3 環境変数の設定
+
+`.env` ファイルにリダイレクトURLを設定する（任意）:
+
+```
+VITE_SUPABASE_REDIRECT_URL=http://localhost:5173
+```
+
+本番環境では本番URLに変更する:
+
+```
+VITE_SUPABASE_REDIRECT_URL=https://your-production-domain.com
+```
+
+> **Note**: `VITE_SUPABASE_REDIRECT_URL` を設定しない場合、現在のオリジンがデフォルトで使用されます。
 
 ## 5. テーブル構成
 
