@@ -32,6 +32,15 @@ describe('validateHabitForm', () => {
       }
     });
 
+    it('should fail when name is whitespace only', () => {
+      const state: HabitFormState = { ...validDailyState, name: '   ' };
+      const result = validateHabitForm(state);
+      expect(result.isValid).toBe(false);
+      if (!result.isValid) {
+        expect(result.errors['name']).toBe('習慣名を入力してください');
+      }
+    });
+
     it('should fail when name exceeds 100 characters', () => {
       const state: HabitFormState = {
         ...validDailyState,

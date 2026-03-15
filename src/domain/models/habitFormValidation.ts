@@ -62,6 +62,7 @@ export const INITIAL_FORM_STATE: HabitFormState = {
 const baseSchema = z.object({
   name: z
     .string()
+    .trim()
     .min(1, '習慣名を入力してください')
     .max(HABIT_NAME_MAX_LENGTH, `習慣名は${HABIT_NAME_MAX_LENGTH}文字以内で入力してください`),
   color: z.string().min(1, '色を選択してください'),
