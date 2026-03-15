@@ -2,141 +2,132 @@
  * @vitest-environment jsdom
  */
 
+/**
+ * HabitCard tests - Verifies rendering, navigation link, and archive action.
+ */
+
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import '@testing-library/jest-dom/vitest';
 import { HabitCard } from '../HabitCard';
-import type { Habit, Streak } from '@/domain/models';
-import type { WeeklyProgress } from '@/domain/services/frequencyService';
+import type { Habit } from '@/domain/models/habit';
 
-// --- Helpers ---
+const activeHabit: Habit = {
+  id: 'h1',
+  userId: 'u1',
+  name: '読書する',
+  frequency: { type: 'daily' },
+  color: '#4CAF50',
+  createdAt: '2026-01-01T00:00:00Z',
+  archivedAt: null,
+};
 
-function createTestHabit(overrides: Partial<Habit> = {}): Habit {
-  return {
-    id: 'habit-1',
-    userId: 'user-1',
-    name: '朝のジョギング',
-    frequency: { type: 'daily' },
-    color: 'blue',
-    createdAt: '2025-01-01T00:00:00Z',
-    archivedAt: null,
-    ...overrides,
-  };
-}
-
-const DEFAULT_STREAK: Streak = { current: 0, longest: 0 };
-const DEFAULT_PROGRESS: WeeklyProgress = { done: 0, target: 7 };
-
-function renderCard(overrides: {
-  habit?: Habit;
-  isCompleted?: boolean;
-  streak?: Streak;
-  weeklyProgress?: WeeklyProgress;
-  onToggle?: () => void;
-  isToggling?: boolean;
-} = {}) {
-  const props = {
-    habit: overrides.habit ?? createTestHabit(),
-    isCompleted: overrides.isCompleted ?? false,
-    streak: overrides.streak ?? DEFAULT_STREAK,
-    weeklyProgress: overrides.weeklyProgress ?? DEFAULT_PROGRESS,
-    onToggle: overrides.onToggle ?? vi.fn(),
-    isToggling: overrides.isToggling ?? false,
-  };
-  return render(<HabitCard {...props} />);
-}
-
-// --- Tests ---
+const archivedHabit: Habit = {
+  ...activeHabit,
+  id: 'h2',
+  name: '瞑想する',
+  archivedAt: '2026-02-01T00:00:00Z',
+};
 
 describe('HabitCard', () => {
-  it('renders the habit name', () => {
-    renderCard();
-    expect(screen.getByText('朝のジョギング')).toBeInTheDocument();
+  const mockOnArchive = vi.fn();
+
+  beforeEach(() => {
+    vi.clearAllMocks();
   });
 
-  it('renders frequency label', () => {
-    renderCard({ habit: createTestHabit({ frequency: { type: 'daily' } }) });
+  it('renders habit name and frequency', () => {
+    render(
+      <MemoryRouter>
+        <HabitCard habit={activeHabit} onArchive={mockOnArchive} isArchived={false} />
+      </MemoryRouter>,
+    );
+    expect(screen.getByText('読書する')).toBeInTheDocument();
     expect(screen.getByText('毎日')).toBeInTheDocument();
   });
 
-  it('renders weekly_days frequency label', () => {
-    renderCard({
-      habit: createTestHabit({
-        frequency: { type: 'weekly_days', days: [1, 3, 5] },
-      }),
-    });
-    expect(screen.getByText('月水金')).toBeInTheDocument();
+  it('renders edit link pointing to /habits/:id', () => {
+    render(
+      <MemoryRouter>
+        <HabitCard habit={activeHabit} onArchive={mockOnArchive} isArchived={false} />
+      </MemoryRouter>,
+    );
+    const link = screen.getByRole('link');
+    expect(link).toHaveAttribute('href', '/habits/h1');
   });
 
-  it('renders weekly_count frequency label', () => {
-    renderCard({
-      habit: createTestHabit({
-        frequency: { type: 'weekly_count', count: 3 },
-      }),
-    });
+  it('shows archive button for active habits', () => {
+    render(
+      <MemoryRouter>
+        <HabitCard habit={activeHabit} onArchive={mockOnArchive} isArchived={false} />
+      </MemoryRouter>,
+    );
+    expect(screen.getByText('アーカイブ')).toBeInTheDocument();
+  });
+
+  it('shows restore button for archived habits', () => {
+    render(
+      <MemoryRouter>
+        <HabitCard habit={archivedHabit} onArchive={mockOnArchive} isArchived={true} />
+      </MemoryRouter>,
+    );
+    expect(screen.getByText('復元')).toBeInTheDocument();
+  });
+
+  it('calls onArchive when archive button is clicked', () => {
+    render(
+      <MemoryRouter>
+        <HabitCard habit={activeHabit} onArchive={mockOnArchive} isArchived={false} />
+      </MemoryRouter>,
+    );
+    fireEvent.click(screen.getByText('アーカイブ'));
+    expect(mockOnArchive).toHaveBeenCalledWith('h1');
+  });
+
+  it('applies line-through style for archived habits', () => {
+    render(
+      <MemoryRouter>
+        <HabitCard habit={archivedHabit} onArchive={mockOnArchive} isArchived={true} />
+      </MemoryRouter>,
+    );
+    const name = screen.getByText('瞑想する');
+    expect(name).toHaveClass('line-through');
+  });
+
+  it('displays weekly_days frequency correctly', () => {
+    const weeklyHabit: Habit = {
+      ...activeHabit,
+      frequency: { type: 'weekly_days', days: [1, 3, 5] },
+    };
+    render(
+      <MemoryRouter>
+        <HabitCard habit={weeklyHabit} onArchive={mockOnArchive} isArchived={false} />
+      </MemoryRouter>,
+    );
+    expect(screen.getByText('月・水・金')).toBeInTheDocument();
+  });
+
+  it('displays weekly_count frequency correctly', () => {
+    const countHabit: Habit = {
+      ...activeHabit,
+      frequency: { type: 'weekly_count', count: 3 },
+    };
+    render(
+      <MemoryRouter>
+        <HabitCard habit={countHabit} onArchive={mockOnArchive} isArchived={false} />
+      </MemoryRouter>,
+    );
     expect(screen.getByText('週3回')).toBeInTheDocument();
   });
 
-  it('shows streak badge when current streak is greater than 0', () => {
-    renderCard({ streak: { current: 5, longest: 10 } });
-    expect(screen.getByText('5')).toBeInTheDocument();
-    expect(screen.getByLabelText('5日連続')).toBeInTheDocument();
-  });
-
-  it('does not show streak badge when current streak is 0', () => {
-    renderCard({ streak: { current: 0, longest: 5 } });
-    expect(screen.queryByLabelText(/日連続/)).not.toBeInTheDocument();
-  });
-
-  it('shows weekly progress bar', () => {
-    renderCard({ weeklyProgress: { done: 3, target: 5 } });
-    expect(screen.getByText('3/5')).toBeInTheDocument();
-    expect(
-      screen.getByRole('progressbar', { name: '今週の進捗: 3/5' }),
-    ).toBeInTheDocument();
-  });
-
-  it('calls onToggle when checkbox is clicked', () => {
-    const onToggle = vi.fn();
-    renderCard({ onToggle });
-    const checkbox = screen.getByRole('checkbox');
-    fireEvent.click(checkbox);
-    expect(onToggle).toHaveBeenCalledOnce();
-  });
-
-  it('renders completed state with line-through', () => {
-    renderCard({ isCompleted: true });
-    const nameEl = screen.getByText('朝のジョギング');
-    expect(nameEl).toHaveClass('line-through');
-  });
-
-  it('applies the correct color border for known colors', () => {
-    const { container } = renderCard({
-      habit: createTestHabit({ color: 'red' }),
-    });
-    const card = container.querySelector('[data-testid="habit-card-habit-1"]');
-    expect(card).toHaveClass('border-l-red-500');
-  });
-
-  it('applies gray border for unknown colors', () => {
-    const { container } = renderCard({
-      habit: createTestHabit({ color: 'unknown' }),
-    });
-    const card = container.querySelector('[data-testid="habit-card-habit-1"]');
-    expect(card).toHaveClass('border-l-gray-500');
-  });
-
-  it('shows appropriate aria-label on checkbox for incomplete habit', () => {
-    renderCard({ isCompleted: false });
-    expect(
-      screen.getByLabelText('朝のジョギングを完了にする'),
-    ).toBeInTheDocument();
-  });
-
-  it('shows appropriate aria-label on checkbox for completed habit', () => {
-    renderCard({ isCompleted: true });
-    expect(
-      screen.getByLabelText('朝のジョギングを未完了にする'),
-    ).toBeInTheDocument();
+  it('renders color indicator with correct background color', () => {
+    const { container } = render(
+      <MemoryRouter>
+        <HabitCard habit={activeHabit} onArchive={mockOnArchive} isArchived={false} />
+      </MemoryRouter>,
+    );
+    const colorDot = container.querySelector('[aria-hidden="true"]');
+    expect(colorDot).toHaveStyle({ backgroundColor: '#4CAF50' });
   });
 });
