@@ -1,57 +1,54 @@
 import React from 'react';
-import { Routes, Route, Link } from 'react-router-dom';
+import { Routes, Route, useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 
 function HomePage() {
+  const navigate = useNavigate();
+
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50">
-      <h1 className="mb-4 text-4xl font-bold text-gray-900">Daily Rituals</h1>
-      <p className="mb-8 text-gray-600">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-background">
+      <h1 className="mb-4 text-4xl font-bold text-foreground">
+        Daily Rituals
+      </h1>
+      <p className="mb-8 text-muted-foreground">
         Build better habits, one day at a time.
       </p>
-      <Link
-        to="/habits"
-        className="rounded-lg bg-blue-600 px-6 py-3 text-white transition-colors hover:bg-blue-700"
-      >
-        View Habits
-      </Link>
+      <Button onClick={() => navigate('/habits')}>View Habits</Button>
     </div>
   );
 }
 
 function LoginPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50">
-      <h1 className="text-2xl font-bold text-gray-900">Login</h1>
+    <div className="flex min-h-screen items-center justify-center bg-background">
+      <h1 className="text-2xl font-bold text-foreground">Login</h1>
     </div>
   );
 }
 
 function HabitsPage() {
+  const navigate = useNavigate();
+
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <h1 className="mb-4 text-2xl font-bold text-gray-900">Habits</h1>
-      <Link
-        to="/habits/new"
-        className="rounded-lg bg-blue-600 px-4 py-2 text-white transition-colors hover:bg-blue-700"
-      >
-        New Habit
-      </Link>
+    <div className="min-h-screen bg-background p-8">
+      <h1 className="mb-4 text-2xl font-bold text-foreground">Habits</h1>
+      <Button onClick={() => navigate('/habits/new')}>New Habit</Button>
     </div>
   );
 }
 
 function NewHabitPage() {
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <h1 className="text-2xl font-bold text-gray-900">New Habit</h1>
+    <div className="min-h-screen bg-background p-8">
+      <h1 className="text-2xl font-bold text-foreground">New Habit</h1>
     </div>
   );
 }
 
 function HabitDetailPage() {
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <h1 className="text-2xl font-bold text-gray-900">Habit Detail</h1>
+    <div className="min-h-screen bg-background p-8">
+      <h1 className="text-2xl font-bold text-foreground">Habit Detail</h1>
     </div>
   );
 }
