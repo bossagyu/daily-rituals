@@ -1,7 +1,7 @@
 /**
  * Tests for habitListOperations - pure functions extracted from useHabitList.
  */
-
+import type { Mocked } from 'vitest';
 import type { Habit } from '../../domain/models';
 import type { HabitRepository } from '../../data/repositories';
 import {
@@ -52,15 +52,15 @@ const ARCHIVED_HABIT_2: Habit = {
 // --- Mock repository ---
 
 function createMockRepository(
-  overrides?: Partial<jest.Mocked<HabitRepository>>,
-): jest.Mocked<HabitRepository> {
+  overrides?: Partial<Mocked<HabitRepository>>,
+): Mocked<HabitRepository> {
   return {
-    findAll: jest.fn().mockResolvedValue([]),
-    findById: jest.fn().mockResolvedValue(null),
-    create: jest.fn().mockResolvedValue(ACTIVE_HABIT_1),
-    update: jest.fn().mockResolvedValue(ACTIVE_HABIT_1),
-    archive: jest.fn().mockResolvedValue(undefined),
-    findArchived: jest.fn().mockResolvedValue([]),
+    findAll: vi.fn().mockResolvedValue([]),
+    findById: vi.fn().mockResolvedValue(null),
+    create: vi.fn().mockResolvedValue(ACTIVE_HABIT_1),
+    update: vi.fn().mockResolvedValue(ACTIVE_HABIT_1),
+    archive: vi.fn().mockResolvedValue(undefined),
+    findArchived: vi.fn().mockResolvedValue([]),
     ...overrides,
   };
 }
@@ -80,7 +80,7 @@ describe('INITIAL_ARCHIVED_STATE', () => {
 describe('loadArchivedHabits', () => {
   it('should return archived habits on success', async () => {
     const mockRepo = createMockRepository({
-      findArchived: jest
+      findArchived: vi
         .fn()
         .mockResolvedValue([ARCHIVED_HABIT_1, ARCHIVED_HABIT_2]),
     });
@@ -94,7 +94,7 @@ describe('loadArchivedHabits', () => {
 
   it('should return empty array when no archived habits exist', async () => {
     const mockRepo = createMockRepository({
-      findArchived: jest.fn().mockResolvedValue([]),
+      findArchived: vi.fn().mockResolvedValue([]),
     });
 
     const result = await loadArchivedHabits(mockRepo);
@@ -106,7 +106,7 @@ describe('loadArchivedHabits', () => {
 
   it('should return error message from Error instance on failure', async () => {
     const mockRepo = createMockRepository({
-      findArchived: jest
+      findArchived: vi
         .fn()
         .mockRejectedValue(new Error('Database connection lost')),
     });
@@ -120,7 +120,7 @@ describe('loadArchivedHabits', () => {
 
   it('should return fallback error message for non-Error thrown values', async () => {
     const mockRepo = createMockRepository({
-      findArchived: jest.fn().mockRejectedValue('string error'),
+      findArchived: vi.fn().mockRejectedValue('string error'),
     });
 
     const result = await loadArchivedHabits(mockRepo);

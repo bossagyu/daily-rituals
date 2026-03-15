@@ -5,6 +5,7 @@
  * we test the underlying HabitsManager class which contains
  * all the business logic that the hook delegates to.
  */
+import type { Mocked } from 'vitest';
 import type { Habit, CreateHabitInput } from '../../domain/models';
 import type { HabitRepository, UpdateHabitInput } from '../../data/repositories';
 import { HabitsManager, type HabitsState } from '../habitsManager';
@@ -31,21 +32,21 @@ const SAMPLE_HABIT_2: Habit = {
 
 // --- Mock repository ---
 
-function createMockRepository(): jest.Mocked<HabitRepository> {
+function createMockRepository(): Mocked<HabitRepository> {
   return {
-    findAll: jest.fn().mockResolvedValue([]),
-    findById: jest.fn().mockResolvedValue(null),
-    create: jest.fn().mockResolvedValue(SAMPLE_HABIT_1),
-    update: jest.fn().mockResolvedValue(SAMPLE_HABIT_1),
-    archive: jest.fn().mockResolvedValue(undefined),
-    findArchived: jest.fn().mockResolvedValue([]),
+    findAll: vi.fn().mockResolvedValue([]),
+    findById: vi.fn().mockResolvedValue(null),
+    create: vi.fn().mockResolvedValue(SAMPLE_HABIT_1),
+    update: vi.fn().mockResolvedValue(SAMPLE_HABIT_1),
+    archive: vi.fn().mockResolvedValue(undefined),
+    findArchived: vi.fn().mockResolvedValue([]),
   };
 }
 
 // --- Tests ---
 
 describe('HabitsManager', () => {
-  let mockRepo: jest.Mocked<HabitRepository>;
+  let mockRepo: Mocked<HabitRepository>;
   let states: HabitsState[];
   let manager: HabitsManager;
 
