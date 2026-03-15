@@ -22,11 +22,11 @@ const makeCompletion = (
 const createMockRepository = (
   overrides: Partial<CompletionRepository> = {},
 ): CompletionRepository => ({
-  findByHabitId: jest.fn().mockResolvedValue([]),
-  findByDate: jest.fn().mockResolvedValue([]),
-  findByHabitIdAndDateRange: jest.fn().mockResolvedValue([]),
-  create: jest.fn().mockResolvedValue(makeCompletion('h1', '2025-03-10')),
-  delete: jest.fn().mockResolvedValue(undefined),
+  findByHabitId: vi.fn().mockResolvedValue([]),
+  findByDate: vi.fn().mockResolvedValue([]),
+  findByHabitIdAndDateRange: vi.fn().mockResolvedValue([]),
+  create: vi.fn().mockResolvedValue(makeCompletion('h1', '2025-03-10')),
+  delete: vi.fn().mockResolvedValue(undefined),
   ...overrides,
 });
 
@@ -73,7 +73,7 @@ describe('performToggle', () => {
   it('creates a completion when habit is not yet completed', async () => {
     const newCompletion = makeCompletion('h1', TODAY);
     const repo = createMockRepository({
-      create: jest.fn().mockResolvedValue(newCompletion),
+      create: vi.fn().mockResolvedValue(newCompletion),
     });
     const currentCompletions: readonly Completion[] = [];
 
@@ -86,7 +86,7 @@ describe('performToggle', () => {
   it('deletes a completion when habit is already completed', async () => {
     const existing = makeCompletion('h1', TODAY);
     const repo = createMockRepository({
-      delete: jest.fn().mockResolvedValue(undefined),
+      delete: vi.fn().mockResolvedValue(undefined),
     });
     const currentCompletions: readonly Completion[] = [existing];
 
@@ -100,7 +100,7 @@ describe('performToggle', () => {
     const other = makeCompletion('h2', TODAY);
     const newCompletion = makeCompletion('h1', TODAY);
     const repo = createMockRepository({
-      create: jest.fn().mockResolvedValue(newCompletion),
+      create: vi.fn().mockResolvedValue(newCompletion),
     });
     const currentCompletions: readonly Completion[] = [other];
 
@@ -114,7 +114,7 @@ describe('performToggle', () => {
     const existing = makeCompletion('h1', TODAY);
     const other = makeCompletion('h2', TODAY);
     const repo = createMockRepository({
-      delete: jest.fn().mockResolvedValue(undefined),
+      delete: vi.fn().mockResolvedValue(undefined),
     });
     const currentCompletions: readonly Completion[] = [existing, other];
 
@@ -126,7 +126,7 @@ describe('performToggle', () => {
 
   it('throws error when repository create fails', async () => {
     const repo = createMockRepository({
-      create: jest.fn().mockRejectedValue(new Error('Write error')),
+      create: vi.fn().mockRejectedValue(new Error('Write error')),
     });
 
     await expect(
@@ -137,7 +137,7 @@ describe('performToggle', () => {
   it('throws error when repository delete fails', async () => {
     const existing = makeCompletion('h1', TODAY);
     const repo = createMockRepository({
-      delete: jest.fn().mockRejectedValue(new Error('Delete error')),
+      delete: vi.fn().mockRejectedValue(new Error('Delete error')),
     });
 
     await expect(
@@ -155,7 +155,7 @@ describe('loadCompletionsByDate', () => {
       makeCompletion('h2', TODAY),
     ];
     const repo = createMockRepository({
-      findByDate: jest.fn().mockResolvedValue(completions),
+      findByDate: vi.fn().mockResolvedValue(completions),
     });
 
     const result = await loadCompletionsByDate(repo, TODAY);
@@ -166,7 +166,7 @@ describe('loadCompletionsByDate', () => {
 
   it('returns empty array when no completions exist', async () => {
     const repo = createMockRepository({
-      findByDate: jest.fn().mockResolvedValue([]),
+      findByDate: vi.fn().mockResolvedValue([]),
     });
 
     const result = await loadCompletionsByDate(repo, TODAY);
@@ -176,7 +176,7 @@ describe('loadCompletionsByDate', () => {
 
   it('propagates repository errors', async () => {
     const repo = createMockRepository({
-      findByDate: jest.fn().mockRejectedValue(new Error('Connection lost')),
+      findByDate: vi.fn().mockRejectedValue(new Error('Connection lost')),
     });
 
     await expect(loadCompletionsByDate(repo, TODAY)).rejects.toThrow(
