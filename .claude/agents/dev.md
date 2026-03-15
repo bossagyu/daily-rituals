@@ -100,6 +100,21 @@ src/
 - hooks層はdomain層とdata層を橋渡しする
 - ui層はhooks層を通じてデータにアクセスする
 
+### フック層のビジネスロジック分離パターン
+
+フック層では、ビジネスロジックをReact非依存のクラスまたは関数に分離する。これにより、React Testing Libraryなしでもロジックのテストが可能になる。
+
+| パターン | 用途 | 例 |
+|---------|------|-----|
+| Manager クラス | ステート管理を含むCRUD操作 | `HabitsManager`（useHabitsのロジック） |
+| Operations 関数 | ステートレスな操作関数群 | `completionOperations`、`streakOperations` |
+| 共通ユーティリティ | 複数フックで共有する関数 | `src/hooks/utils.ts`（`extractErrorMessage`等） |
+
+**ルール:**
+- ビジネスロジックは `*Manager.ts` または `*Operations.ts` に配置し、フック本体（`use*.ts`）はReactステート管理と委譲のみを担当する
+- 複数ファイルに同一関数を定義しない。共通関数は `src/hooks/utils.ts` に集約する
+- `useCallback` 内で直接ステートを参照する場合、ステール状態キャプチャに注意する。非同期処理では `useRef` で最新値を追跡するパターンを使う
+
 ## 並行実装時の注意
 
 - 他のPRと同一ファイル（特に `index.ts` のバレルエクスポート）を変更する場合、コンフリクトリスクを認識する
