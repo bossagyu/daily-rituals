@@ -33,6 +33,7 @@ export default defineConfig({
         'src/data/repositories/completionRepository.ts',
         'src/data/repositories/index.ts',
         'src/hooks/index.ts',
+        'src/lib/database.types.ts',
       ],
       thresholds: {
         branches: 80,
