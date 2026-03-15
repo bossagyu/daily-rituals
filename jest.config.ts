@@ -6,17 +6,22 @@ const config: Config = {
   roots: ['<rootDir>/src'],
   testMatch: ['**/__tests__/**/*.test.ts'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
+  moduleNameMapper: {
+    '^@/(.*)$': '<rootDir>/src/$1',
+  },
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',
     '!src/**/*.d.ts',
     '!src/**/__tests__/**',
     '!src/hooks/use*.ts',
-    '!src/ui/screens/*Screen.tsx',
-    '!src/ui/screens/index.ts',
-    '!src/ui/navigation/RootNavigator.tsx',
-    '!src/ui/navigation/HabitsStackNavigator.tsx',
-    '!src/ui/navigation/index.ts',
-    '!src/data/repositories/RepositoryContext.tsx',
+    '!src/main.tsx',
+    '!src/App.tsx',
+    '!src/components/**',
+    '!src/lib/utils.ts',
+    '!src/vite-env.d.ts',
+    '!src/data/repositories/completionRepository.ts',
+    '!src/data/repositories/index.ts',
+    '!src/hooks/index.ts',
   ],
   coverageThreshold: {
     global: {
