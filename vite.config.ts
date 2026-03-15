@@ -28,6 +28,7 @@ export default defineConfig({
         'src/main.tsx',
         'src/App.tsx',
         'src/components/**',
+        'src/ui/**',
         'src/lib/utils.ts',
         'src/vite-env.d.ts',
         'src/data/repositories/completionRepository.ts',
