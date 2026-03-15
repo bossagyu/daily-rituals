@@ -60,6 +60,7 @@ export function App() {
       isLoading={isLoading}
       error={error}
       onSignIn={signIn}
+      onSignOut={signOut}
     >
       <Routes>
         <Route path="/" element={<HomePage />} />

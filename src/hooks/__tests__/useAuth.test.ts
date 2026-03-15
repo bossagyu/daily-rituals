@@ -103,7 +103,7 @@ describe('AuthManager', () => {
       expect(latestState.isLoading).toBe(false);
     });
 
-    it('should set error when initialization fails', async () => {
+    it('should set user-friendly error when initialization fails', async () => {
       const { client, mockGetUser } = createMockSupabaseClient();
       mockGetUser.mockResolvedValue({
         data: { user: null },
@@ -113,9 +113,34 @@ describe('AuthManager', () => {
       const manager = new AuthManager(client, stateCallback);
       await manager.initialize();
 
-      expect(latestState.error).toBe('Network error');
+      expect(latestState.error).toBe(
+        '認証に失敗しました。もう一度お試しください。'
+      );
       expect(latestState.isLoading).toBe(false);
       expect(latestState.user).toBeNull();
+    });
+
+    it('should register auth state listener before awaiting getCurrentUser', async () => {
+      const { client, mockGetUser, mockOnAuthStateChange } =
+        createMockSupabaseClient();
+      const callOrder: string[] = [];
+
+      mockOnAuthStateChange.mockImplementation((cb: Function) => {
+        callOrder.push('onAuthStateChange');
+        return {
+          data: { subscription: { unsubscribe: vi.fn() } },
+        };
+      });
+
+      mockGetUser.mockImplementation(async () => {
+        callOrder.push('getUser');
+        return { data: { user: null }, error: null };
+      });
+
+      const manager = new AuthManager(client, stateCallback);
+      await manager.initialize();
+
+      expect(callOrder).toEqual(['onAuthStateChange', 'getUser']);
     });
   });
 
@@ -135,7 +160,7 @@ describe('AuthManager', () => {
       });
     });
 
-    it('should set error when sign-in fails', async () => {
+    it('should set user-friendly error when sign-in fails', async () => {
       const { client, mockSignInWithOAuth, mockGetUser } =
         createMockSupabaseClient();
       mockGetUser.mockResolvedValue({ data: { user: null }, error: null });
@@ -148,7 +173,9 @@ describe('AuthManager', () => {
       await manager.initialize();
       await manager.signIn();
 
-      expect(latestState.error).toBe('OAuth failed');
+      expect(latestState.error).toBe(
+        '認証に失敗しました。もう一度お試しください。'
+      );
     });
   });
 
@@ -166,7 +193,7 @@ describe('AuthManager', () => {
       expect(latestState.user).toBeNull();
     });
 
-    it('should set error when sign-out fails', async () => {
+    it('should set user-friendly error when sign-out fails', async () => {
       const { client, mockGetUser, mockSignOut } = createMockSupabaseClient();
       const mockUser = createMockUser();
       mockGetUser.mockResolvedValue({ data: { user: mockUser }, error: null });
@@ -182,7 +209,9 @@ describe('AuthManager', () => {
       await manager.initialize();
       await manager.signOut();
 
-      expect(latestState.error).toBe('Sign out failed');
+      expect(latestState.error).toBe(
+        '認証に失敗しました。もう一度お試しください。'
+      );
     });
   });
 

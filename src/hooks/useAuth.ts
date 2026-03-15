@@ -13,6 +13,7 @@ import {
   getCurrentUser,
   onAuthStateChange,
 } from '@/lib/auth';
+import { toUserFriendlyAuthError } from '@/lib/authErrors';
 
 export type AuthState = {
   readonly user: User | null;
@@ -50,18 +51,22 @@ export class AuthManager {
   }
 
   async initialize(): Promise<void> {
+    // Register listener first to prevent race condition where
+    // component unmounts before getCurrentUser completes
+    this.unsubscribe = onAuthStateChange(this.client, (user) => {
+      this.updateState({ user, error: null });
+    });
+
     try {
       const user = await getCurrentUser(this.client);
       this.updateState({ user, isLoading: false, error: null });
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : 'Failed to initialize auth';
+        error instanceof Error
+          ? toUserFriendlyAuthError(error.message)
+          : '認証に失敗しました。もう一度お試しください。';
       this.updateState({ user: null, isLoading: false, error: message });
     }
-
-    this.unsubscribe = onAuthStateChange(this.client, (user) => {
-      this.updateState({ user, error: null });
-    });
   }
 
   async signIn(): Promise<void> {
@@ -70,7 +75,9 @@ export class AuthManager {
       await signInWithGoogle(this.client);
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : 'Failed to sign in';
+        error instanceof Error
+          ? toUserFriendlyAuthError(error.message)
+          : '認証に失敗しました。もう一度お試しください。';
       this.updateState({ error: message });
     }
   }
@@ -82,7 +89,9 @@ export class AuthManager {
       this.updateState({ user: null });
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : 'Failed to sign out';
+        error instanceof Error
+          ? toUserFriendlyAuthError(error.message)
+          : '認証に失敗しました。もう一度お試しください。';
       this.updateState({ error: message });
     }
   }
