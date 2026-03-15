@@ -8,8 +8,13 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import type { Habit } from '../domain/models';
 import type { HabitRepository } from '../data/repositories';
-import { mergeHabitLists } from '../domain/services/habitListService';
 import { useHabits, type UseHabitsReturn } from './useHabits';
+import {
+  loadArchivedHabits,
+  buildDisplayHabits,
+  INITIAL_ARCHIVED_STATE,
+  type HabitListArchivedState,
+} from './habitListOperations';
 
 export type UseHabitListReturn = {
   readonly displayHabits: readonly Habit[];
@@ -20,34 +25,25 @@ export type UseHabitListReturn = {
   readonly refresh: () => Promise<void>;
 } & Pick<UseHabitsReturn, 'createHabit' | 'updateHabit' | 'archiveHabit'>;
 
-const LOAD_ARCHIVED_ERROR = 'Failed to load archived habits';
-
-function extractErrorMessage(error: unknown, fallback: string): string {
-  if (error instanceof Error) {
-    return error.message;
-  }
-  return fallback;
-}
-
 export function useHabitList(repository: HabitRepository): UseHabitListReturn {
   const habitsReturn = useHabits(repository);
   const [showArchived, setShowArchived] = useState(false);
-  const [archivedHabits, setArchivedHabits] = useState<readonly Habit[]>([]);
-  const [archivedError, setArchivedError] = useState<string | null>(null);
-  const [archivedLoading, setArchivedLoading] = useState(false);
+  const [archivedState, setArchivedState] =
+    useState<HabitListArchivedState>(INITIAL_ARCHIVED_STATE);
   const repositoryRef = useRef(repository);
 
+  useEffect(() => {
+    repositoryRef.current = repository;
+  }, [repository]);
+
   const loadArchived = useCallback(async () => {
-    setArchivedLoading(true);
-    setArchivedError(null);
-    try {
-      const habits = await repositoryRef.current.findArchived();
-      setArchivedHabits(habits);
-    } catch (error: unknown) {
-      setArchivedError(extractErrorMessage(error, LOAD_ARCHIVED_ERROR));
-    } finally {
-      setArchivedLoading(false);
-    }
+    setArchivedState((prev) => ({
+      ...prev,
+      archivedLoading: true,
+      archivedError: null,
+    }));
+    const result = await loadArchivedHabits(repositoryRef.current);
+    setArchivedState(result);
   }, []);
 
   useEffect(() => {
@@ -65,11 +61,11 @@ export function useHabitList(repository: HabitRepository): UseHabitListReturn {
     if (showArchived) {
       await loadArchived();
     }
-  }, [habitsReturn, showArchived, loadArchived]);
+  }, [habitsReturn.refresh, showArchived, loadArchived]);
 
-  const displayHabits = mergeHabitLists(
-    [...habitsReturn.habits],
-    [...archivedHabits],
+  const displayHabits = buildDisplayHabits(
+    habitsReturn.habits,
+    archivedState.archivedHabits,
     showArchived,
   );
 
@@ -77,8 +73,8 @@ export function useHabitList(repository: HabitRepository): UseHabitListReturn {
     displayHabits,
     showArchived,
     toggleShowArchived,
-    isLoading: habitsReturn.isLoading || archivedLoading,
-    error: habitsReturn.error ?? archivedError,
+    isLoading: habitsReturn.isLoading || archivedState.archivedLoading,
+    error: habitsReturn.error ?? archivedState.archivedError,
     refresh,
     createHabit: habitsReturn.createHabit,
     updateHabit: habitsReturn.updateHabit,
