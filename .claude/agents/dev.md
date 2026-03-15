@@ -67,13 +67,15 @@ model: opus
 ## テスト戦略
 
 ### ユニットテスト
-- ドメインサービス、マッパー関数、ユーティリティに対してモックベースで実施
+- ドメインサービス、マッパー関数、ユーティリティに対してVitestでモックベースで実施
 
 ### 統合テスト（リポジトリ層）
-- expo-sqliteはJest環境で利用不可のため、`better-sqlite3` のインメモリDBを使用する
-- expo-sqlite APIインターフェース（`getAllSync`, `runSync`, `execSync`）に準拠したアダプターを作成する
-- 実際のSQLiteエンジンでSQL文の構文正確性、制約の動作、クエリ結果を検証する
-- Sprint 3で確立したパターンを参考に実装する（`completionRepository.integration.test.ts`）
+- Supabaseクライアントのモック、またはテスト用Supabaseプロジェクトを使用して検証する
+- RLS（Row Level Security）ポリシーの動作はテスト用プロジェクトで検証する
+
+### E2Eテスト
+- Playwrightを使用してブラウザ上でのユーザーフローを検証する
+- 認証フロー（Google OAuth）、CRUD操作、PWAオフライン動作を対象とする
 
 ### テストの品質基準
 - カバレッジ80%以上
@@ -88,11 +90,11 @@ src/
 │   ├── models/       # 型定義 + ビジネスルール
 │   └── services/     # ドメインサービス（ストリーク計算、頻度判定など）
 ├── data/             # データ層
-│   ├── database/     # SQLiteスキーマ、マイグレーション
+│   ├── supabase/     # Supabaseクライアント設定、RLSポリシー
 │   └── repositories/ # リポジトリ（インターフェース + 実装）
 ├── hooks/            # カスタムフック（アプリケーション層の役割）
 └── ui/               # プレゼンテーション層
-    ├── screens/
+    ├── pages/
     └── components/
 ```
 
@@ -118,11 +120,11 @@ src/
 
 ### UI層のDI（依存性注入）パターン
 
-スクリーンコンポーネントがリポジトリ等の依存を必要とする場合、React Contextを使ったDIパターンを使用する。
+ページコンポーネントがリポジトリ等の依存を必要とする場合、React Contextを使ったDIパターンを使用する。
 
 - `RepositoryProvider` がコンポーネントツリーのルート（`App.tsx`）でリポジトリインスタンスを提供する
-- スクリーンは `useRepositories()` フックを通じてリポジトリを取得する
-- React Navigationのスクリーン定義ではpropsの直接注入が困難なため、Contextパターンが標準
+- ページは `useRepositories()` フックを通じてリポジトリを取得する
+- React Routerのルート定義ではpropsの直接注入が困難なため、Contextパターンが標準
 - テスト時はProviderをモックすることで依存を差し替え可能
 
 ### バリデーションのtrim標準化
@@ -147,11 +149,15 @@ const schema = z.object({
 
 ## 技術スタック
 
-- React Native + Expo
+- Vite + React
 - TypeScript（strictモード）
-- expo-sqlite（ローカルデータベース）
-- Jest（テスト）
-- better-sqlite3（統合テスト用）
+- Supabase（PostgreSQL + 認証）
+- Tailwind CSS + shadcn/ui（UIフレームワーク）
+- Supabase Auth（Google OAuth 認証）
+- Vitest（ユニット・統合テスト）
+- Playwright（E2Eテスト）
+- Vercel（ホスティング）
+- vite-plugin-pwa（PWA対応）
 
 ## 基本原則
 
