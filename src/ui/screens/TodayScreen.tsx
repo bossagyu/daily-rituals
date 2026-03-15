@@ -19,6 +19,7 @@ import type { WeeklyProgress } from '../../domain/services/frequencyService';
 import type { Streak } from '../../domain/models';
 import { useHabits } from '../../hooks/useHabits';
 import { useCompletions, useStreak } from '../../hooks';
+import { useRepositories } from '../../data/repositories';
 import type { HabitRepository, CompletionRepository } from '../../data/repositories';
 import {
   filterTodayHabits,
@@ -39,8 +40,8 @@ const CHECKBOX_BORDER_WIDTH = 2;
 // --- Types ---
 
 export type TodayScreenProps = {
-  readonly habitRepository: HabitRepository;
-  readonly completionRepository: CompletionRepository;
+  readonly habitRepository?: HabitRepository;
+  readonly completionRepository?: CompletionRepository;
 };
 
 type HabitItemProps = {
@@ -142,9 +143,13 @@ const LoadingIndicator: React.FC = () => (
 // --- Main component ---
 
 export const TodayScreen: React.FC<TodayScreenProps> = ({
-  habitRepository,
-  completionRepository,
+  habitRepository: habitRepoProp,
+  completionRepository: completionRepoProp,
 }) => {
+  const repos = useRepositories();
+  const habitRepository = habitRepoProp ?? repos.habitRepository;
+  const completionRepository = completionRepoProp ?? repos.completionRepository;
+
   const today = useMemo(() => new Date(), []);
   const todayString = useMemo(() => formatDateString(today), [today]);
 

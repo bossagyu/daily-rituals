@@ -10,3 +10,7 @@ export {
   CompletionRepositoryImpl,
   DuplicateCompletionError,
 } from './completionRepository';
+
+export { RepositoryProvider } from './RepositoryContext';
+export { useRepositories } from './repositoryHook';
+export type { RepositoryContextValue } from './repositoryHook';

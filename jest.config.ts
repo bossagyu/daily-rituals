@@ -16,6 +16,7 @@ const config: Config = {
     '!src/ui/navigation/RootNavigator.tsx',
     '!src/ui/navigation/HabitsStackNavigator.tsx',
     '!src/ui/navigation/index.ts',
+    '!src/data/repositories/RepositoryContext.tsx',
   ],
   coverageThreshold: {
     global: {
