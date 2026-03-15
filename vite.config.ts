@@ -3,9 +3,60 @@ import path from 'path';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
+import { VitePWA } from 'vite-plugin-pwa';
+
+const THEME_COLOR = '#6366f1';
+const BACKGROUND_COLOR = '#ffffff';
 
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [
+    react(),
+    tailwindcss(),
+    VitePWA({
+      registerType: 'autoUpdate',
+      includeAssets: ['icon-192x192.svg', 'icon-512x512.svg'],
+      manifest: {
+        name: 'Daily Rituals',
+        short_name: 'Rituals',
+        description: 'Daily habit tracking application',
+        theme_color: THEME_COLOR,
+        background_color: BACKGROUND_COLOR,
+        display: 'standalone',
+        start_url: '/',
+        icons: [
+          {
+            src: 'icon-192x192.svg',
+            sizes: '192x192',
+            type: 'image/svg+xml',
+            purpose: 'any',
+          },
+          {
+            src: 'icon-512x512.svg',
+            sizes: '512x512',
+            type: 'image/svg+xml',
+            purpose: 'any maskable',
+          },
+        ],
+      },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,svg,png,ico,woff,woff2}'],
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
+            handler: 'NetworkOnly',
+            options: {
+              cacheName: 'supabase-api',
+            },
+          },
+        ],
+        navigateFallback: '/index.html',
+        navigateFallbackDenylist: [/^\/api\//],
+      },
+      devOptions: {
+        enabled: false,
+      },
+    }),
+  ],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
