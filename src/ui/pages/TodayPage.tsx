@@ -12,7 +12,7 @@ import { useHabits } from '@/hooks/useHabits';
 import { useCompletions } from '@/hooks/useCompletions';
 import { useStreak } from '@/hooks/useStreak';
 import { isDueToday } from '@/domain/services/frequencyService';
-import { HabitCard } from '@/ui/components/HabitCard';
+import { TodayHabitCard } from '@/ui/components/TodayHabitCard';
 import type { Habit } from '@/domain/models';
 
 // --- Date Utilities ---
@@ -119,7 +119,7 @@ function HabitList({
   return (
     <div className="flex flex-col gap-2">
       {habits.map((habit) => (
-        <HabitCard
+        <TodayHabitCard
           key={habit.id}
           habit={habit}
           isCompleted={isCompleted(habit.id, today)}
