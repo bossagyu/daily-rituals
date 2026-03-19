@@ -13,7 +13,7 @@ test.describe('Sign Out', () => {
     await expect(page.getByRole('heading', { name: 'Today' })).toBeVisible();
 
     // Click logout
-    await page.locator('text=ログアウト').first().click({ force: true });
+    await page.getByRole('button', { name: /ログアウト/ }).first().click();
 
     // Should show login page
     await expect(
