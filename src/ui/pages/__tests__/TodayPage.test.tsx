@@ -314,7 +314,7 @@ describe('TodayPage', () => {
 
     await waitFor(() => {
       expect(screen.getByText('週3回の習慣')).toBeInTheDocument();
-      expect(screen.getByText('週3回')).toBeInTheDocument();
+      expect(screen.getByText(/今週.*0.*\/.*3/)).toBeInTheDocument();
     });
   });
 });

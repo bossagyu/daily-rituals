@@ -5,6 +5,11 @@ describe('createSupabaseClient', () => {
 
   beforeEach(() => {
     vi.resetModules();
+    Object.keys(import.meta.env).forEach((key) => {
+      if (key.startsWith('VITE_SUPABASE_')) {
+        delete (import.meta.env as Record<string, string>)[key];
+      }
+    });
   });
 
   afterEach(() => {
