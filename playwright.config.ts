@@ -25,8 +25,15 @@ export default defineConfig({
   },
   projects: [
     {
-      name: 'chromium',
+      name: 'authenticated',
       use: { ...devices['Desktop Chrome'] },
+      testIgnore: /z-signout\.spec\.ts/,
+    },
+    {
+      name: 'signout',
+      use: { ...devices['Desktop Chrome'] },
+      testMatch: /z-signout\.spec\.ts/,
+      dependencies: ['authenticated'],
     },
   ],
   webServer: {

@@ -2,7 +2,6 @@ import { createClient } from '@supabase/supabase-js';
 import {
   SUPABASE_LOCAL_URL,
   SUPABASE_LOCAL_ANON_KEY,
-  SUPABASE_LOCAL_SERVICE_ROLE_KEY,
 } from '../../playwright.config';
 import { createAdminClient } from './test-data';
 

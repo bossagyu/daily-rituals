@@ -2,7 +2,12 @@ import { test as base } from '@playwright/test';
 import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
-import { seedHabit, seedCompletion, cleanupTestData } from '../helpers/test-data';
+import {
+  seedHabit,
+  seedCompletion,
+  cleanupTestData,
+  type SeedHabitOverrides,
+} from '../helpers/test-data';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const USER_ID_PATH = path.join(__dirname, '..', '.auth', 'test-user-id.txt');
@@ -10,14 +15,6 @@ const USER_ID_PATH = path.join(__dirname, '..', '.auth', 'test-user-id.txt');
 function getTestUserId(): string {
   return fs.readFileSync(USER_ID_PATH, 'utf-8').trim();
 }
-
-type SeedHabitOverrides = {
-  readonly name?: string;
-  readonly frequencyType?: 'daily' | 'weekly_days' | 'weekly_count';
-  readonly frequencyValue?: unknown;
-  readonly color?: string;
-  readonly archivedAt?: string | null;
-};
 
 type TestFixtures = {
   testUserId: string;

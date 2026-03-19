@@ -13,7 +13,7 @@ export function createAdminClient(): SupabaseClient {
   });
 }
 
-type SeedHabitOverrides = {
+export type SeedHabitOverrides = {
   readonly name?: string;
   readonly frequencyType?: 'daily' | 'weekly_days' | 'weekly_count';
   readonly frequencyValue?: unknown;
