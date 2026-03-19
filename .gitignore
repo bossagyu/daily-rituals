@@ -29,3 +29,8 @@ coverage/
 .vscode/
 *.swp
 *.swo
+
+# playwright
+e2e/.auth/
+playwright-report/
+test-results/
