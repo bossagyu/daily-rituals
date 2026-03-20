@@ -89,6 +89,38 @@ export async function performToggleWithRetry(
 }
 
 /**
+ * Computes the optimistic (predicted) completions array for immediate UI update.
+ *
+ * If the habit is already completed on the given date, removes it.
+ * If not, adds a placeholder completion with an optimistic ID.
+ * This is a pure function that never mutates the input array.
+ */
+export function computeOptimisticCompletions(
+  currentCompletions: readonly Completion[],
+  habitId: string,
+  date: string,
+): readonly Completion[] {
+  const existing = currentCompletions.find(
+    (c) => c.habitId === habitId && c.completedDate === date,
+  );
+
+  if (existing) {
+    return currentCompletions.filter(
+      (c) => !(c.habitId === habitId && c.completedDate === date),
+    );
+  }
+
+  const placeholder: Completion = {
+    id: `optimistic-${habitId}-${date}`,
+    userId: '',
+    habitId,
+    completedDate: date,
+    createdAt: new Date().toISOString(),
+  };
+  return [...currentCompletions, placeholder];
+}
+
+/**
  * Loads completions for a given date from the repository.
  */
 export async function loadCompletionsByDate(

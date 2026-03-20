@@ -6,6 +6,7 @@ import {
   performToggleWithRetry,
   loadCompletionsByDate,
   extractErrorMessage,
+  computeOptimisticCompletions,
 } from '../completionOperations';
 
 // --- Helpers ---
@@ -262,6 +263,60 @@ describe('loadCompletionsByDate', () => {
     await expect(loadCompletionsByDate(repo, TODAY)).rejects.toThrow(
       'Connection lost',
     );
+  });
+});
+
+describe('computeOptimisticCompletions', () => {
+  const TODAY = '2025-03-10';
+
+  it('adds a placeholder completion when habit is not yet completed', () => {
+    const currentCompletions: readonly Completion[] = [];
+    const result = computeOptimisticCompletions(currentCompletions, 'h1', TODAY);
+
+    expect(result).toHaveLength(1);
+    expect(result[0].habitId).toBe('h1');
+    expect(result[0].completedDate).toBe(TODAY);
+    expect(result[0].id).toMatch(/^optimistic-/);
+  });
+
+  it('removes the completion when habit is already completed', () => {
+    const existing = makeCompletion('h1', TODAY);
+    const currentCompletions: readonly Completion[] = [existing];
+
+    const result = computeOptimisticCompletions(currentCompletions, 'h1', TODAY);
+
+    expect(result).toHaveLength(0);
+  });
+
+  it('preserves other completions when adding', () => {
+    const other = makeCompletion('h2', TODAY);
+    const currentCompletions: readonly Completion[] = [other];
+
+    const result = computeOptimisticCompletions(currentCompletions, 'h1', TODAY);
+
+    expect(result).toHaveLength(2);
+    expect(result).toContainEqual(other);
+    expect(result.find((c) => c.habitId === 'h1')).toBeDefined();
+  });
+
+  it('preserves other completions when removing', () => {
+    const existing = makeCompletion('h1', TODAY);
+    const other = makeCompletion('h2', TODAY);
+    const currentCompletions: readonly Completion[] = [existing, other];
+
+    const result = computeOptimisticCompletions(currentCompletions, 'h1', TODAY);
+
+    expect(result).toHaveLength(1);
+    expect(result).toContainEqual(other);
+  });
+
+  it('does not mutate the original array', () => {
+    const original: readonly Completion[] = [makeCompletion('h1', TODAY)];
+    const originalCopy = [...original];
+
+    computeOptimisticCompletions(original, 'h1', TODAY);
+
+    expect(original).toEqual(originalCopy);
   });
 });
 
