@@ -52,39 +52,35 @@ export function useCompletions(
   completionsRef.current = state.completions;
   const navigate = useNavigate();
 
-  const loadCompletions = useCallback(async (): Promise<void> => {
-    setState((prev) => ({ ...prev, loading: true, error: null }));
-    try {
-      const completions = await loadCompletionsByDate(repository, date);
-      setState({ completions, loading: false, error: null });
-    } catch (err) {
-      setState({ completions: [], loading: false, error: extractErrorMessage(err) });
-    }
-  }, [repository, date]);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    const load = async (): Promise<void> => {
+  const fetchAndSetCompletions = useCallback(
+    async (shouldUpdate: () => boolean): Promise<void> => {
       setState((prev) => ({ ...prev, loading: true, error: null }));
       try {
         const completions = await loadCompletionsByDate(repository, date);
-        if (!cancelled) {
+        if (shouldUpdate()) {
           setState({ completions, loading: false, error: null });
         }
       } catch (err) {
-        if (!cancelled) {
+        if (shouldUpdate()) {
           setState({ completions: [], loading: false, error: extractErrorMessage(err) });
         }
       }
-    };
+    },
+    [repository, date],
+  );
 
-    load();
-
+  useEffect(() => {
+    let cancelled = false;
+    void fetchAndSetCompletions(() => !cancelled);
     return () => {
       cancelled = true;
     };
-  }, [repository, date]);
+  }, [fetchAndSetCompletions]);
+
+  const loadCompletions = useCallback(
+    () => fetchAndSetCompletions(() => true),
+    [fetchAndSetCompletions],
+  );
 
   const isCompleted = useCallback(
     (habitId: string, checkDate: string): boolean =>
