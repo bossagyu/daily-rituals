@@ -108,12 +108,12 @@ export function useCompletions(
         );
         setState((prev) => ({ ...prev, completions: confirmedCompletions, error: null }));
       } catch (err) {
-        setState((prev) => ({ ...prev, completions: previousCompletions }));
         if (err instanceof SessionExpiredError) {
+          setState((prev) => ({ ...prev, completions: previousCompletions }));
           navigate('/login', { replace: true });
           return;
         }
-        setState((prev) => ({ ...prev, error: extractErrorMessage(err) }));
+        setState((prev) => ({ ...prev, completions: previousCompletions, error: extractErrorMessage(err) }));
       }
     },
     [repository, sessionRefresher, navigate],
