@@ -8,6 +8,7 @@
 
 import React, { useMemo, useCallback } from 'react';
 import { useRepositories } from '@/hooks/useRepositories';
+import { useAuthContext } from '@/hooks/useAuthContext';
 import { useHabits } from '@/hooks/useHabits';
 import { useCompletions } from '@/hooks/useCompletions';
 import { useStreak } from '@/hooks/useStreak';
@@ -171,9 +172,10 @@ export function TodayPage() {
   const today = useMemo(() => getTodayString(), []);
   const displayDate = useMemo(() => formatDisplayDate(today), [today]);
 
+  const { refreshSession } = useAuthContext();
   const { habitRepository, completionRepository } = useRepositories();
   const { habits, isLoading: habitsLoading, error: habitsError, refresh: refreshHabits } = useHabits(habitRepository);
-  const { isCompleted, toggleCompletion, loading: completionsLoading, error: completionsError } = useCompletions(completionRepository, today);
+  const { isCompleted, toggleCompletion, loading: completionsLoading, error: completionsError, refreshCompletions } = useCompletions(completionRepository, today, refreshSession);
   const { getStreak, getWeeklyProgress, refreshStreak } = useStreak(completionRepository, habits, today);
 
   const todaysHabits = useMemo(() => {
@@ -195,7 +197,8 @@ export function TodayPage() {
 
   const handleRetry = useCallback(() => {
     void refreshHabits();
-  }, [refreshHabits]);
+    void refreshCompletions();
+  }, [refreshHabits, refreshCompletions]);
 
   if (isLoading) {
     return (

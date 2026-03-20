@@ -3,6 +3,7 @@ import type { Completion } from '../../domain/models';
 import {
   buildIsCompleted,
   performToggle,
+  performToggleWithRetry,
   loadCompletionsByDate,
   extractErrorMessage,
 } from '../completionOperations';
@@ -144,6 +145,84 @@ describe('performToggle', () => {
     await expect(
       performToggle(repo, [existing], 'h1', TODAY),
     ).rejects.toThrow('Delete error');
+  });
+});
+
+describe('performToggleWithRetry', () => {
+  const TODAY = '2025-03-10';
+
+  it('calls performToggle directly when no RLS error occurs', async () => {
+    const newCompletion = makeCompletion('h1', TODAY);
+    const repo = createMockRepository({
+      create: vi.fn().mockResolvedValue(newCompletion),
+    });
+    const refreshSession = vi.fn();
+
+    const result = await performToggleWithRetry(
+      repo,
+      [],
+      'h1',
+      TODAY,
+      refreshSession,
+    );
+
+    expect(result).toContainEqual(newCompletion);
+    expect(refreshSession).not.toHaveBeenCalled();
+  });
+
+  it('retries after session refresh when RLS error (42501) occurs', async () => {
+    const newCompletion = makeCompletion('h1', TODAY);
+    const rlsError = new Error('new row violates row-level security policy');
+    (rlsError as unknown as Record<string, unknown>).code = '42501';
+
+    const repo = createMockRepository({
+      create: vi
+        .fn()
+        .mockRejectedValueOnce(rlsError)
+        .mockResolvedValueOnce(newCompletion),
+    });
+    const refreshSession = vi.fn().mockResolvedValue(true);
+
+    const result = await performToggleWithRetry(
+      repo,
+      [],
+      'h1',
+      TODAY,
+      refreshSession,
+    );
+
+    expect(refreshSession).toHaveBeenCalledTimes(1);
+    expect(repo.create).toHaveBeenCalledTimes(2);
+    expect(result).toContainEqual(newCompletion);
+  });
+
+  it('throws SessionExpiredError when session refresh fails after RLS error', async () => {
+    const rlsError = new Error('new row violates row-level security policy');
+    (rlsError as unknown as Record<string, unknown>).code = '42501';
+
+    const repo = createMockRepository({
+      create: vi.fn().mockRejectedValue(rlsError),
+    });
+    const refreshSession = vi.fn().mockResolvedValue(false);
+
+    await expect(
+      performToggleWithRetry(repo, [], 'h1', TODAY, refreshSession),
+    ).rejects.toThrow('SESSION_EXPIRED');
+
+    expect(refreshSession).toHaveBeenCalledTimes(1);
+  });
+
+  it('throws original error for non-RLS errors without retry', async () => {
+    const repo = createMockRepository({
+      create: vi.fn().mockRejectedValue(new Error('Network error')),
+    });
+    const refreshSession = vi.fn();
+
+    await expect(
+      performToggleWithRetry(repo, [], 'h1', TODAY, refreshSession),
+    ).rejects.toThrow('Network error');
+
+    expect(refreshSession).not.toHaveBeenCalled();
   });
 });
 

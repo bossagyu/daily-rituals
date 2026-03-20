@@ -23,6 +23,7 @@ const createMockSupabaseClient = () => {
   const mockSignInWithOAuth = vi.fn();
   const mockSignOut = vi.fn();
   const mockGetUser = vi.fn();
+  const mockRefreshSession = vi.fn();
   const mockUnsubscribe = vi.fn();
   let authCallback: Function | null = null;
 
@@ -38,6 +39,7 @@ const createMockSupabaseClient = () => {
       signInWithOAuth: mockSignInWithOAuth,
       signOut: mockSignOut,
       getUser: mockGetUser,
+      refreshSession: mockRefreshSession,
       onAuthStateChange: mockOnAuthStateChange,
     },
   } as unknown as SupabaseClient;
@@ -47,6 +49,7 @@ const createMockSupabaseClient = () => {
     mockSignInWithOAuth,
     mockSignOut,
     mockGetUser,
+    mockRefreshSession,
     mockOnAuthStateChange,
     mockUnsubscribe,
     triggerAuthChange: (event: string, session: unknown) => {
@@ -245,6 +248,55 @@ describe('AuthManager', () => {
       triggerAuthChange('SIGNED_OUT', null);
 
       expect(latestState.user).toBeNull();
+    });
+  });
+
+  describe('refreshSession', () => {
+    it('should return true when session refresh succeeds', async () => {
+      const { client, mockGetUser, mockRefreshSession } = createMockSupabaseClient();
+      const mockUser = createMockUser();
+      mockGetUser.mockResolvedValue({ data: { user: mockUser }, error: null });
+      mockRefreshSession.mockResolvedValue({
+        data: { session: { user: mockUser } },
+        error: null,
+      });
+
+      const manager = new AuthManager(client, stateCallback);
+      await manager.initialize();
+
+      const result = await manager.refreshSession();
+
+      expect(result).toBe(true);
+      expect(mockRefreshSession).toHaveBeenCalled();
+    });
+
+    it('should return false when session refresh fails', async () => {
+      const { client, mockGetUser, mockRefreshSession } = createMockSupabaseClient();
+      mockGetUser.mockResolvedValue({ data: { user: null }, error: null });
+      mockRefreshSession.mockResolvedValue({
+        data: { session: null },
+        error: { message: 'Refresh token expired', status: 401, name: 'AuthError' },
+      });
+
+      const manager = new AuthManager(client, stateCallback);
+      await manager.initialize();
+
+      const result = await manager.refreshSession();
+
+      expect(result).toBe(false);
+    });
+
+    it('should return false when refreshSession throws', async () => {
+      const { client, mockGetUser, mockRefreshSession } = createMockSupabaseClient();
+      mockGetUser.mockResolvedValue({ data: { user: null }, error: null });
+      mockRefreshSession.mockRejectedValue(new Error('Network error'));
+
+      const manager = new AuthManager(client, stateCallback);
+      await manager.initialize();
+
+      const result = await manager.refreshSession();
+
+      expect(result).toBe(false);
     });
   });
 

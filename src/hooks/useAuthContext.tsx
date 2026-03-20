@@ -15,6 +15,7 @@ export type AuthContextValue = {
   readonly error: string | null;
   readonly signIn: () => Promise<void>;
   readonly signOut: () => Promise<void>;
+  readonly refreshSession: () => Promise<boolean>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -37,8 +38,9 @@ export function AuthProvider({ client, children }: AuthProviderProps) {
       error: auth.error,
       signIn: auth.signIn,
       signOut: auth.signOut,
+      refreshSession: auth.refreshSession,
     }),
-    [auth.user, auth.isLoading, auth.error, auth.signIn, auth.signOut],
+    [auth.user, auth.isLoading, auth.error, auth.signIn, auth.signOut, auth.refreshSession],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -7,8 +7,20 @@
 
 import type { CompletionRepository } from '../data/repositories';
 import type { Completion } from '../domain/models';
+import { isRlsError } from './utils';
 
 export { extractErrorMessage } from './utils';
+
+/**
+ * Error thrown when session refresh fails after an RLS violation.
+ * Signals that the user should be redirected to login.
+ */
+export class SessionExpiredError extends Error {
+  constructor() {
+    super('SESSION_EXPIRED');
+    this.name = 'SessionExpiredError';
+  }
+}
 
 /**
  * Creates a function that checks whether a specific habit is completed on a given date.
@@ -45,6 +57,35 @@ export async function performToggle(
 
   const created = await repository.create(habitId, date);
   return [...currentCompletions, created];
+}
+
+/**
+ * Performs toggle with RLS error recovery.
+ *
+ * If the toggle fails with an RLS violation (code 42501), attempts to refresh
+ * the session and retry once. If session refresh fails, throws SessionExpiredError.
+ */
+export async function performToggleWithRetry(
+  repository: CompletionRepository,
+  currentCompletions: readonly Completion[],
+  habitId: string,
+  date: string,
+  refreshSession: () => Promise<boolean>,
+): Promise<readonly Completion[]> {
+  try {
+    return await performToggle(repository, currentCompletions, habitId, date);
+  } catch (err) {
+    if (!isRlsError(err)) {
+      throw err;
+    }
+
+    const refreshed = await refreshSession();
+    if (!refreshed) {
+      throw new SessionExpiredError();
+    }
+
+    return performToggle(repository, currentCompletions, habitId, date);
+  }
 }
 
 /**

@@ -77,6 +77,27 @@ function createMockCompletionRepository(
   };
 }
 
+// --- Mock react-router-dom ---
+
+const mockNavigate = vi.fn();
+
+vi.mock('react-router-dom', () => ({
+  useNavigate: () => mockNavigate,
+}));
+
+// --- Mock useAuthContext ---
+
+vi.mock('@/hooks/useAuthContext', () => ({
+  useAuthContext: () => ({
+    user: { id: 'user-test-123' },
+    isLoading: false,
+    error: null,
+    signIn: vi.fn(),
+    signOut: vi.fn(),
+    refreshSession: vi.fn().mockResolvedValue(true),
+  }),
+}));
+
 // --- Mock useRepositories ---
 
 let mockHabitRepository: HabitRepository;
