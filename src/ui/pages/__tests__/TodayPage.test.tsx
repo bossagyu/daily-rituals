@@ -77,6 +77,27 @@ function createMockCompletionRepository(
   };
 }
 
+// --- Mock react-router-dom ---
+
+const mockNavigate = vi.fn();
+
+vi.mock('react-router-dom', () => ({
+  useNavigate: () => mockNavigate,
+}));
+
+// --- Mock useAuthContext ---
+
+vi.mock('@/hooks/useAuthContext', () => ({
+  useAuthContext: () => ({
+    user: { id: 'user-test-123' },
+    isLoading: false,
+    error: null,
+    signIn: vi.fn(),
+    signOut: vi.fn(),
+    refreshSession: vi.fn().mockResolvedValue(true),
+  }),
+}));
+
 // --- Mock useRepositories ---
 
 let mockHabitRepository: HabitRepository;
@@ -294,6 +315,45 @@ describe('TodayPage', () => {
         'h1',
         getTodayStr(),
       );
+    });
+  });
+
+  it('handleRetry clears completionsError and reloads completions', async () => {
+    const todayStr = getTodayStr();
+    const findAllMock = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('habits error'))
+      .mockResolvedValueOnce([makeHabit({ id: 'h1', name: 'リトライ後の習慣' })]);
+
+    const findByDateMock = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('completions error'))
+      .mockResolvedValueOnce([makeCompletion('h1', todayStr)]);
+
+    mockHabitRepository = createMockHabitRepository({
+      findAll: findAllMock,
+    });
+    mockCompletionRepository = createMockCompletionRepository({
+      findByDate: findByDateMock,
+    });
+
+    render(<TodayPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('再試行')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByText('再試行'));
+
+    await waitFor(() => {
+      expect(findAllMock).toHaveBeenCalledTimes(2);
+      expect(findByDateMock).toHaveBeenCalledTimes(2);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('リトライ後の習慣')).toBeInTheDocument();
+      const nameEl = screen.getByText('リトライ後の習慣');
+      expect(nameEl).toHaveClass('line-through');
     });
   });
 

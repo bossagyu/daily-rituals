@@ -82,6 +82,15 @@ export class AuthManager {
     }
   }
 
+  async refreshSession(): Promise<boolean> {
+    try {
+      const { error } = await this.client.auth.refreshSession();
+      return !error;
+    } catch {
+      return false;
+    }
+  }
+
   async signOut(): Promise<void> {
     try {
       this.updateState({ error: null });
@@ -110,6 +119,7 @@ export type UseAuthReturn = {
   readonly error: string | null;
   readonly signIn: () => Promise<void>;
   readonly signOut: () => Promise<void>;
+  readonly refreshSession: () => Promise<boolean>;
 };
 
 /**
@@ -140,6 +150,7 @@ export function useAuth(client: SupabaseClient): UseAuthReturn {
 
   const signIn = useCallback(() => manager.signIn(), [manager]);
   const signOut = useCallback(() => manager.signOut(), [manager]);
+  const refreshSession = useCallback(() => manager.refreshSession(), [manager]);
 
   return {
     user: state.user,
@@ -147,5 +158,6 @@ export function useAuth(client: SupabaseClient): UseAuthReturn {
     error: state.error,
     signIn,
     signOut,
+    refreshSession,
   };
 }

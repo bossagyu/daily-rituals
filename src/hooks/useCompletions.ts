@@ -8,11 +8,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { CompletionRepository } from '../data/repositories';
 import type { Completion } from '../domain/models';
+import { useNavigate } from 'react-router-dom';
 import {
   buildIsCompleted,
-  performToggle,
   loadCompletionsByDate,
+  performToggleWithRetry,
   extractErrorMessage,
+  SessionExpiredError,
 } from './completionOperations';
 
 // --- State type ---
@@ -37,39 +39,48 @@ export type UseCompletionsResult = {
   readonly error: string | null;
   readonly isCompleted: (habitId: string, date: string) => boolean;
   readonly toggleCompletion: (habitId: string, date: string) => Promise<void>;
+  readonly refreshCompletions: () => Promise<void>;
 };
 
 export function useCompletions(
   repository: CompletionRepository,
   date: string,
+  refreshSession?: () => Promise<boolean>,
 ): UseCompletionsResult {
   const [state, setState] = useState<CompletionsState>(INITIAL_STATE);
   const completionsRef = useRef<readonly Completion[]>(state.completions);
   completionsRef.current = state.completions;
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    let cancelled = false;
-
-    const load = async (): Promise<void> => {
+  const fetchAndSetCompletions = useCallback(
+    async (shouldUpdate: () => boolean): Promise<void> => {
       setState((prev) => ({ ...prev, loading: true, error: null }));
       try {
         const completions = await loadCompletionsByDate(repository, date);
-        if (!cancelled) {
+        if (shouldUpdate()) {
           setState({ completions, loading: false, error: null });
         }
       } catch (err) {
-        if (!cancelled) {
+        if (shouldUpdate()) {
           setState({ completions: [], loading: false, error: extractErrorMessage(err) });
         }
       }
-    };
+    },
+    [repository, date],
+  );
 
-    load();
-
+  useEffect(() => {
+    let cancelled = false;
+    void fetchAndSetCompletions(() => !cancelled);
     return () => {
       cancelled = true;
     };
-  }, [repository, date]);
+  }, [fetchAndSetCompletions]);
+
+  const loadCompletions = useCallback(
+    () => fetchAndSetCompletions(() => true),
+    [fetchAndSetCompletions],
+  );
 
   const isCompleted = useCallback(
     (habitId: string, checkDate: string): boolean =>
@@ -77,21 +88,29 @@ export function useCompletions(
     [state.completions],
   );
 
+  const defaultRefreshSession = useCallback(async (): Promise<boolean> => false, []);
+  const sessionRefresher = refreshSession ?? defaultRefreshSession;
+
   const toggleCompletion = useCallback(
     async (habitId: string, toggleDate: string): Promise<void> => {
       try {
-        const newCompletions = await performToggle(
+        const newCompletions = await performToggleWithRetry(
           repository,
           completionsRef.current,
           habitId,
           toggleDate,
+          sessionRefresher,
         );
         setState((prev) => ({ ...prev, completions: newCompletions, error: null }));
       } catch (err) {
+        if (err instanceof SessionExpiredError) {
+          navigate('/login', { replace: true });
+          return;
+        }
         setState((prev) => ({ ...prev, error: extractErrorMessage(err) }));
       }
     },
-    [repository],
+    [repository, sessionRefresher, navigate],
   );
 
   return {
@@ -100,5 +119,6 @@ export function useCompletions(
     error: state.error,
     isCompleted,
     toggleCompletion,
+    refreshCompletions: loadCompletions,
   };
 }
