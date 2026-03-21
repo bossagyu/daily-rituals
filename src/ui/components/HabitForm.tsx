@@ -7,6 +7,7 @@
 
 import React, { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
+import { ReminderSection } from '@/ui/components/ReminderSection';
 import type { HabitFormState, FrequencyType } from '@/domain/models/habitFormValidation';
 import {
   INITIAL_FORM_STATE,
@@ -24,6 +25,8 @@ type HabitFormProps = {
   readonly onSubmit: (state: HabitFormState) => void;
   readonly isSubmitting: boolean;
   readonly submitLabel: string;
+  readonly permissionState?: NotificationPermission;
+  readonly onRequestPermission?: () => void;
 };
 
 type FieldErrors = Readonly<Record<string, string>>;
@@ -212,6 +215,8 @@ export function HabitForm({
   onSubmit,
   isSubmitting,
   submitLabel,
+  permissionState,
+  onRequestPermission,
 }: HabitFormProps) {
   const [formState, setFormState] = useState<HabitFormState>(
     initialState ?? INITIAL_FORM_STATE,
@@ -279,6 +284,16 @@ export function HabitForm({
         value={formState.color}
         onChange={(value) => updateField('color', value)}
         error={errors['color']}
+      />
+
+      <ReminderSection
+        enabled={formState.reminderEnabled}
+        time={formState.reminderTime}
+        onEnabledChange={(value) => updateField('reminderEnabled', value)}
+        onTimeChange={(value) => updateField('reminderTime', value)}
+        error={errors['reminderTime']}
+        permissionState={permissionState}
+        onRequestPermission={onRequestPermission}
       />
 
       <Button type="submit" disabled={isSubmitting} className="w-full">

@@ -41,6 +41,8 @@ export type Habit = {
   readonly color: string;
   readonly createdAt: string;
   readonly archivedAt: string | null;
+  readonly reminderTime: string | null;
+  readonly lastNotifiedDate: string | null;
 };
 
 // --- Zod Schemas ---
@@ -81,6 +83,8 @@ export const habitSchema = z.object({
   color: z.string().min(1),
   createdAt: z.string().min(1),
   archivedAt: z.string().nullable(),
+  reminderTime: z.string().regex(/^\d{2}:\d{2}(:\d{2})?$/).nullable().default(null),
+  lastNotifiedDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().default(null),
 });
 
 /**
@@ -92,6 +96,7 @@ export const createHabitInputSchema = z.object({
   name: z.string().min(1).max(HABIT_NAME_MAX_LENGTH),
   frequency: frequencySchema,
   color: z.string().min(1),
+  reminderTime: z.string().nullable().optional(),
 });
 
 export type CreateHabitInput = z.infer<typeof createHabitInputSchema>;

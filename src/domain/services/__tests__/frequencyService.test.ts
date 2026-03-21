@@ -9,6 +9,8 @@ const BASE_HABIT: Habit = {
   color: '#FF0000',
   createdAt: '2026-01-01T00:00:00Z',
   archivedAt: null,
+  reminderTime: null,
+  lastNotifiedDate: null,
 };
 
 function makeHabit(overrides: Partial<Habit>): Habit {

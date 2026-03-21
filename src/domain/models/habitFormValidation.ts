@@ -47,6 +47,8 @@ export type HabitFormState = {
   readonly weeklyDays: readonly number[];
   readonly weeklyCount: number;
   readonly color: string;
+  readonly reminderEnabled: boolean;
+  readonly reminderTime: string; // local time "HH:MM"
 };
 
 export const INITIAL_FORM_STATE: HabitFormState = {
@@ -55,6 +57,8 @@ export const INITIAL_FORM_STATE: HabitFormState = {
   weeklyDays: [],
   weeklyCount: 1,
   color: PRESET_COLORS[0],
+  reminderEnabled: false,
+  reminderTime: '',
 };
 
 // --- Validation schemas ---
@@ -103,19 +107,26 @@ export function validateHabitForm(state: HabitFormState): ValidationResult {
 
   const result = schema.safeParse(dataToValidate);
 
-  if (result.success) {
-    return { isValid: true, errors: {} };
-  }
-
   const errors: Record<string, string> = {};
-  for (const issue of result.error.issues) {
-    const field = issue.path[0];
-    if (typeof field === 'string' && !(field in errors)) {
-      errors[field] = issue.message;
+
+  if (!result.success) {
+    for (const issue of result.error.issues) {
+      const field = issue.path[0];
+      if (typeof field === 'string' && !(field in errors)) {
+        errors[field] = issue.message;
+      }
     }
   }
 
-  return { isValid: false, errors };
+  if (state.reminderEnabled && !state.reminderTime) {
+    errors['reminderTime'] = 'リマインダー時刻を選択してください';
+  }
+
+  if (Object.keys(errors).length > 0) {
+    return { isValid: false, errors };
+  }
+
+  return { isValid: true, errors: {} };
 }
 
 function getSchemaForFrequencyType(type: FrequencyType): z.ZodType {
@@ -162,6 +173,7 @@ export function toCreateHabitInput(state: HabitFormState, userId: string): Creat
     name: state.name.trim(),
     frequency: toFrequencyForInput(state),
     color: state.color,
+    reminderTime: state.reminderEnabled ? state.reminderTime : null,
   };
 }
 
@@ -193,6 +205,11 @@ import type { Habit } from './habit';
  * Converts an existing Habit to a HabitFormState for editing.
  */
 export function habitToFormState(habit: Habit): HabitFormState {
+  const reminderEnabled = habit.reminderTime !== null;
+  const reminderTime = habit.reminderTime !== null
+    ? habit.reminderTime.substring(0, 5) // "HH:MM:SS" → "HH:MM", stays in UTC
+    : '';
+
   switch (habit.frequency.type) {
     case 'daily':
       return {
@@ -201,6 +218,8 @@ export function habitToFormState(habit: Habit): HabitFormState {
         weeklyDays: [],
         weeklyCount: 1,
         color: habit.color,
+        reminderEnabled,
+        reminderTime,
       };
     case 'weekly_days':
       return {
@@ -209,6 +228,8 @@ export function habitToFormState(habit: Habit): HabitFormState {
         weeklyDays: [...habit.frequency.days],
         weeklyCount: 1,
         color: habit.color,
+        reminderEnabled,
+        reminderTime,
       };
     case 'weekly_count':
       return {
@@ -217,6 +238,8 @@ export function habitToFormState(habit: Habit): HabitFormState {
         weeklyDays: [],
         weeklyCount: habit.frequency.count,
         color: habit.color,
+        reminderEnabled,
+        reminderTime,
       };
   }
 }

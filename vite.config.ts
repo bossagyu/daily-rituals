@@ -14,7 +14,10 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['icon-192x192.svg', 'icon-512x512.svg'],
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.ts',
+      includeAssets: ['icon-192x192.svg', 'icon-512x512.svg', 'icon-192x192.png'],
       manifest: {
         name: 'Daily Rituals',
         short_name: 'Rituals',
@@ -36,12 +39,16 @@ export default defineConfig({
             type: 'image/svg+xml',
             purpose: 'any maskable',
           },
+          {
+            src: 'icon-192x192.png',
+            sizes: '192x192',
+            type: 'image/png',
+            purpose: 'any',
+          },
         ],
       },
-      workbox: {
+      injectManifest: {
         globPatterns: ['**/*.{js,css,html,svg,png,ico,woff,woff2}'],
-        navigateFallback: '/index.html',
-        navigateFallbackDenylist: [/^\/api\//],
       },
       devOptions: {
         enabled: false,
@@ -59,7 +66,10 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
-    include: ['src/**/__tests__/**/*.test.{ts,tsx}'],
+    include: [
+      'src/**/__tests__/**/*.test.{ts,tsx}',
+      'supabase/functions/**/__tests__/**/*.test.ts',
+    ],
     coverage: {
       provider: 'v8',
       include: ['src/**/*.{ts,tsx}'],

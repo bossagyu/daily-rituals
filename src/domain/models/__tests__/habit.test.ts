@@ -44,6 +44,8 @@ describe('Habit type', () => {
       color: '#FF5733',
       createdAt: '2026-01-01T00:00:00Z',
       archivedAt: null,
+      reminderTime: null,
+      lastNotifiedDate: null,
     };
 
     expect(habit.id).toBe('habit-1');
@@ -61,6 +63,8 @@ describe('Habit type', () => {
       color: '#33FF57',
       createdAt: '2026-01-01T00:00:00Z',
       archivedAt: '2026-03-01T00:00:00Z',
+      reminderTime: '09:00:00',
+      lastNotifiedDate: '2026-03-01',
     };
 
     expect(habit.archivedAt).toBe('2026-03-01T00:00:00Z');
@@ -193,6 +197,59 @@ describe('habitSchema', () => {
       archivedAt: '2026-03-01T00:00:00Z',
     });
     expect(result.success).toBe(true);
+  });
+
+  it('should accept a habit with reminderTime as null', () => {
+    const result = habitSchema.safeParse({
+      ...validHabit,
+      reminderTime: null,
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.reminderTime).toBeNull();
+    }
+  });
+
+  it('should accept a habit with reminderTime as a string', () => {
+    const result = habitSchema.safeParse({
+      ...validHabit,
+      reminderTime: '09:00:00',
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.reminderTime).toBe('09:00:00');
+    }
+  });
+
+  it('should accept a habit with lastNotifiedDate as null', () => {
+    const result = habitSchema.safeParse({
+      ...validHabit,
+      lastNotifiedDate: null,
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.lastNotifiedDate).toBeNull();
+    }
+  });
+
+  it('should accept a habit with lastNotifiedDate as a string', () => {
+    const result = habitSchema.safeParse({
+      ...validHabit,
+      lastNotifiedDate: '2026-03-21',
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.lastNotifiedDate).toBe('2026-03-21');
+    }
+  });
+
+  it('should default reminderTime and lastNotifiedDate to null when omitted', () => {
+    const result = habitSchema.safeParse(validHabit);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.reminderTime).toBeNull();
+      expect(result.data.lastNotifiedDate).toBeNull();
+    }
   });
 });
 

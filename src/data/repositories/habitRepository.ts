@@ -14,7 +14,9 @@ import type { Habit, Frequency, CreateHabitInput } from '../../domain/models';
  * Input type for updating an existing habit.
  * All fields are optional; only provided fields will be updated.
  */
-export type UpdateHabitInput = Partial<CreateHabitInput>;
+export type UpdateHabitInput = Partial<CreateHabitInput> & {
+  readonly reminderTime?: string | null;
+};
 
 // --- Mapper functions ---
 
