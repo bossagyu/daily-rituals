@@ -54,6 +54,7 @@ export function useStreak(
 ): UseStreakResult {
   const [state, setState] = useState<StreakState>(INITIAL_STATE);
   const cacheRef = useRef<Map<string, readonly Completion[]>>(new Map());
+  const fetchingRef = useRef<Set<string>>(new Set());
 
   const habitsMap = useMemo(() => {
     const map = new Map<string, Habit>();
@@ -86,6 +87,10 @@ export function useStreak(
       if (cached !== undefined) {
         return cached;
       }
+      if (fetchingRef.current.has(habitId)) {
+        return [];
+      }
+      fetchingRef.current.add(habitId);
       setState((prev) => ({ ...prev, loading: true }));
       try {
         return await fetchCompletions(habitId);
@@ -96,6 +101,8 @@ export function useStreak(
           error: extractErrorMessage(err),
         }));
         return [];
+      } finally {
+        fetchingRef.current.delete(habitId);
       }
     },
     [fetchCompletions],
