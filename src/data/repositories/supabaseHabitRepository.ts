@@ -33,6 +33,8 @@ const toDomainHabit = (row: HabitRow): Habit => ({
   color: row.color,
   createdAt: row.created_at,
   archivedAt: row.archived_at,
+  reminderTime: row.reminder_time,
+  lastNotifiedDate: row.last_notified_date,
 });
 
 /**
@@ -117,6 +119,9 @@ export const createSupabaseHabitRepository = (
       );
       updateFields.frequency_type = frequencyType;
       updateFields.frequency_value = frequencyValue;
+    }
+    if (input.reminderTime !== undefined) {
+      updateFields.reminder_time = input.reminderTime;
     }
 
     const { data, error } = await client

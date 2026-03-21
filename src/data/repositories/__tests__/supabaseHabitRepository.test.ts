@@ -50,6 +50,8 @@ const sampleHabitRow: HabitRow = {
   color: '#FF0000',
   created_at: '2026-01-01T00:00:00Z',
   archived_at: null,
+  reminder_time: null,
+  last_notified_date: null,
 };
 
 const sampleHabit: Habit = {
@@ -60,6 +62,8 @@ const sampleHabit: Habit = {
   color: '#FF0000',
   createdAt: '2026-01-01T00:00:00Z',
   archivedAt: null,
+  reminderTime: null,
+  lastNotifiedDate: null,
 };
 
 const weeklyDaysRow: HabitRow = {
@@ -71,6 +75,8 @@ const weeklyDaysRow: HabitRow = {
   color: '#00FF00',
   created_at: '2026-01-02T00:00:00Z',
   archived_at: null,
+  reminder_time: null,
+  last_notified_date: null,
 };
 
 const weeklyCountRow: HabitRow = {
@@ -82,6 +88,8 @@ const weeklyCountRow: HabitRow = {
   color: '#0000FF',
   created_at: '2026-01-03T00:00:00Z',
   archived_at: null,
+  reminder_time: null,
+  last_notified_date: null,
 };
 
 describe('SupabaseHabitRepository', () => {
@@ -113,6 +121,8 @@ describe('SupabaseHabitRepository', () => {
         color: '#00FF00',
         createdAt: '2026-01-02T00:00:00Z',
         archivedAt: null,
+        reminderTime: null,
+        lastNotifiedDate: null,
       });
       expect(result[2]).toEqual({
         id: 'habit-3',
@@ -122,6 +132,8 @@ describe('SupabaseHabitRepository', () => {
         color: '#0000FF',
         createdAt: '2026-01-03T00:00:00Z',
         archivedAt: null,
+        reminderTime: null,
+        lastNotifiedDate: null,
       });
     });
 
@@ -135,6 +147,26 @@ describe('SupabaseHabitRepository', () => {
       await expect(repo.findAll()).rejects.toThrow(
         'Failed to fetch habits: Network error',
       );
+    });
+  });
+
+  describe('toDomainHabit mapping', () => {
+    it('should map reminder_time and last_notified_date to camelCase', async () => {
+      const rowWithReminder: HabitRow = {
+        ...sampleHabitRow,
+        reminder_time: '08:30:00',
+        last_notified_date: '2026-03-20',
+      };
+      mock.chain.single.mockResolvedValue({
+        data: rowWithReminder,
+        error: null,
+      });
+
+      const repo = createSupabaseHabitRepository(mock.client, USER_ID);
+      const result = await repo.findById('habit-1');
+
+      expect(result?.reminderTime).toBe('08:30:00');
+      expect(result?.lastNotifiedDate).toBe('2026-03-20');
     });
   });
 
@@ -285,6 +317,48 @@ describe('SupabaseHabitRepository', () => {
         frequency_type: 'weekly_count',
         frequency_value: '5',
       });
+    });
+
+    it('should update reminderTime when provided', async () => {
+      const updatedRow: HabitRow = {
+        ...sampleHabitRow,
+        reminder_time: '09:00:00',
+      };
+      mock.chain.single.mockResolvedValue({
+        data: updatedRow,
+        error: null,
+      });
+
+      const repo = createSupabaseHabitRepository(mock.client, USER_ID);
+      const result = await repo.update('habit-1', {
+        reminderTime: '09:00:00',
+      });
+
+      expect(mock.chain.update).toHaveBeenCalledWith({
+        reminder_time: '09:00:00',
+      });
+      expect(result?.reminderTime).toBe('09:00:00');
+    });
+
+    it('should allow clearing reminderTime by passing null', async () => {
+      const updatedRow: HabitRow = {
+        ...sampleHabitRow,
+        reminder_time: null,
+      };
+      mock.chain.single.mockResolvedValue({
+        data: updatedRow,
+        error: null,
+      });
+
+      const repo = createSupabaseHabitRepository(mock.client, USER_ID);
+      const result = await repo.update('habit-1', {
+        reminderTime: null,
+      });
+
+      expect(mock.chain.update).toHaveBeenCalledWith({
+        reminder_time: null,
+      });
+      expect(result?.reminderTime).toBeNull();
     });
 
     it('should return null when habit not found', async () => {

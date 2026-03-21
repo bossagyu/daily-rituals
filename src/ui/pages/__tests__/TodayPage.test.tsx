@@ -29,6 +29,8 @@ function makeHabit(overrides: Partial<Habit> = {}): Habit {
     color: 'blue',
     createdAt: '2025-01-01T00:00:00Z',
     archivedAt: null,
+    reminderTime: null,
+    lastNotifiedDate: null,
     ...overrides,
   };
 }

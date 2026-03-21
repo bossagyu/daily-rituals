@@ -41,6 +41,8 @@ export type Habit = {
   readonly color: string;
   readonly createdAt: string;
   readonly archivedAt: string | null;
+  readonly reminderTime: string | null;
+  readonly lastNotifiedDate: string | null;
 };
 
 // --- Zod Schemas ---
@@ -81,6 +83,8 @@ export const habitSchema = z.object({
   color: z.string().min(1),
   createdAt: z.string().min(1),
   archivedAt: z.string().nullable(),
+  reminderTime: z.string().nullable().default(null),
+  lastNotifiedDate: z.string().nullable().default(null),
 });
 
 /**

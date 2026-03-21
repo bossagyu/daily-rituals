@@ -20,6 +20,8 @@ const SAMPLE_HABIT_1: Habit = {
   color: '#FF0000',
   createdAt: '2026-01-01T00:00:00.000Z',
   archivedAt: null,
+  reminderTime: null,
+  lastNotifiedDate: null,
 };
 
 const SAMPLE_HABIT_2: Habit = {
@@ -30,6 +32,8 @@ const SAMPLE_HABIT_2: Habit = {
   color: '#00FF00',
   createdAt: '2026-01-02T00:00:00.000Z',
   archivedAt: null,
+  reminderTime: null,
+  lastNotifiedDate: null,
 };
 
 // --- Mock repository ---
@@ -134,6 +138,8 @@ describe('HabitsManager', () => {
         color: '#AABBCC',
         createdAt: '2026-03-15T00:00:00.000Z',
         archivedAt: null,
+        reminderTime: null,
+        lastNotifiedDate: null,
       };
 
       mockRepo.create.mockResolvedValue(createdHabit);

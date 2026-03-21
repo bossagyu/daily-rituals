@@ -21,6 +21,8 @@ const activeHabit: Habit = {
   color: '#4CAF50',
   createdAt: '2026-01-01T00:00:00Z',
   archivedAt: null,
+  reminderTime: null,
+  lastNotifiedDate: null,
 };
 
 const archivedHabit: Habit = {

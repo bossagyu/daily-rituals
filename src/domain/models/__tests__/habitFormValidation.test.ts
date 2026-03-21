@@ -241,6 +241,8 @@ describe('habitToFormState', () => {
       color: PRESET_COLORS[0],
       createdAt: '2026-01-01T00:00:00.000Z',
       archivedAt: null,
+      reminderTime: null,
+      lastNotifiedDate: null,
     };
 
     const result = habitToFormState(habit);
@@ -263,6 +265,8 @@ describe('habitToFormState', () => {
       color: PRESET_COLORS[1],
       createdAt: '2026-01-01T00:00:00.000Z',
       archivedAt: null,
+      reminderTime: null,
+      lastNotifiedDate: null,
     };
 
     const result = habitToFormState(habit);
@@ -285,6 +289,8 @@ describe('habitToFormState', () => {
       color: PRESET_COLORS[2],
       createdAt: '2026-01-01T00:00:00.000Z',
       archivedAt: null,
+      reminderTime: null,
+      lastNotifiedDate: null,
     };
 
     const result = habitToFormState(habit);

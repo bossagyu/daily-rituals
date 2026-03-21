@@ -21,6 +21,8 @@ const ACTIVE_HABIT_1: Habit = {
   color: '#FF0000',
   createdAt: '2026-01-01T00:00:00.000Z',
   archivedAt: null,
+  reminderTime: null,
+  lastNotifiedDate: null,
 };
 
 const ACTIVE_HABIT_2: Habit = {
@@ -31,6 +33,8 @@ const ACTIVE_HABIT_2: Habit = {
   color: '#00FF00',
   createdAt: '2026-01-02T00:00:00.000Z',
   archivedAt: null,
+  reminderTime: null,
+  lastNotifiedDate: null,
 };
 
 const ARCHIVED_HABIT_1: Habit = {
@@ -41,6 +45,8 @@ const ARCHIVED_HABIT_1: Habit = {
   color: '#0000FF',
   createdAt: '2026-01-03T00:00:00.000Z',
   archivedAt: '2026-02-01T00:00:00.000Z',
+  reminderTime: null,
+  lastNotifiedDate: null,
 };
 
 const ARCHIVED_HABIT_2: Habit = {
@@ -51,6 +57,8 @@ const ARCHIVED_HABIT_2: Habit = {
   color: '#FFFF00',
   createdAt: '2026-01-04T00:00:00.000Z',
   archivedAt: '2026-02-15T00:00:00.000Z',
+  reminderTime: null,
+  lastNotifiedDate: null,
 };
 
 // --- Mock repository ---
