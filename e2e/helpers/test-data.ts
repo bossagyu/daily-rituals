@@ -19,6 +19,7 @@ export type SeedHabitOverrides = {
   readonly frequencyValue?: unknown;
   readonly color?: string;
   readonly archivedAt?: string | null;
+  readonly reminderTime?: string | null;
 };
 
 export async function seedHabit(
@@ -35,6 +36,7 @@ export async function seedHabit(
       frequency_value: overrides.frequencyValue ?? null,
       color: overrides.color ?? '#6366f1',
       archived_at: overrides.archivedAt ?? null,
+      reminder_time: overrides.reminderTime ?? null,
     })
     .select('id')
     .single();
