@@ -1,9 +1,10 @@
 /**
- * Checkbox component built with @base-ui/react Checkbox primitive.
+ * Checkbox component using native <input type="checkbox">.
+ * Replaces @base-ui/react Checkbox to fix iOS Safari event propagation issues.
  * Styled with Tailwind CSS to match the design system.
  */
 
-import { Checkbox as CheckboxPrimitive } from '@base-ui/react/checkbox';
+import { useCallback } from 'react';
 import { cn } from '@/lib/utils';
 
 type CheckboxProps = {
@@ -21,35 +22,55 @@ function Checkbox({
   'aria-label': ariaLabel,
   disabled = false,
 }: CheckboxProps) {
+  const handleChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      onCheckedChange?.(e.target.checked);
+    },
+    [onCheckedChange],
+  );
+
   return (
-    <CheckboxPrimitive.Root
-      checked={checked}
-      onCheckedChange={onCheckedChange}
-      disabled={disabled}
-      aria-label={ariaLabel}
+    <label
       className={cn(
-        'flex size-5 shrink-0 items-center justify-center rounded-md border-2 border-muted-foreground/40 transition-colors',
-        'hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-        'data-[checked]:border-primary data-[checked]:bg-primary data-[checked]:text-primary-foreground',
-        'disabled:cursor-not-allowed disabled:opacity-50',
+        'relative inline-flex size-5 shrink-0 items-center justify-center',
+        disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer',
         className,
       )}
     >
-      <CheckboxPrimitive.Indicator className="flex items-center justify-center text-current">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="3"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="size-3.5"
-        >
-          <polyline points="20 6 9 17 4 12" />
-        </svg>
-      </CheckboxPrimitive.Indicator>
-    </CheckboxPrimitive.Root>
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={handleChange}
+        disabled={disabled}
+        aria-label={ariaLabel}
+        className="sr-only"
+      />
+      <span
+        className={cn(
+          'flex size-5 items-center justify-center rounded-md border-2 transition-colors',
+          checked
+            ? 'border-primary bg-primary text-primary-foreground'
+            : 'border-muted-foreground/40 hover:border-primary',
+          'focus-within:outline-none focus-within:ring-2 focus-within:ring-ring',
+        )}
+      >
+        {checked && (
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="3"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="size-3.5"
+            aria-hidden="true"
+          >
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        )}
+      </span>
+    </label>
   );
 }
 
