@@ -43,11 +43,12 @@ function Checkbox({
         onChange={handleChange}
         disabled={disabled}
         aria-label={ariaLabel}
-        className="sr-only"
+        className="absolute size-full cursor-pointer opacity-0"
       />
       <span
+        aria-hidden="true"
         className={cn(
-          'flex size-5 items-center justify-center rounded-md border-2 transition-colors',
+          'pointer-events-none flex size-5 items-center justify-center rounded-md border-2 transition-colors',
           checked
             ? 'border-primary bg-primary text-primary-foreground'
             : 'border-muted-foreground/40 hover:border-primary',
