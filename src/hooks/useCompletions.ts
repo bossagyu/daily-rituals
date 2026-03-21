@@ -6,6 +6,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import type { CompletionRepository } from '../data/repositories';
 import type { Completion } from '../domain/models';
 import { useNavigate } from 'react-router-dom';
@@ -96,7 +97,9 @@ export function useCompletions(
     async (habitId: string, toggleDate: string): Promise<void> => {
       const previousCompletions = completionsRef.current;
       const optimistic = computeOptimisticCompletions(previousCompletions, habitId, toggleDate);
-      setState((prev) => ({ ...prev, completions: optimistic, error: null }));
+      flushSync(() => {
+        setState((prev) => ({ ...prev, completions: optimistic, error: null }));
+      });
 
       try {
         const confirmedCompletions = await performToggleWithRetry(
