@@ -122,6 +122,8 @@ describe('HabitForm', () => {
       weeklyDays: [],
       weeklyCount: 3,
       color: PRESET_COLORS[2],
+      reminderEnabled: false,
+      reminderTime: '',
     };
     renderForm({ initialState });
     expect(screen.getByDisplayValue('瞑想する')).toBeInTheDocument();

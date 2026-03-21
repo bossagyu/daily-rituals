@@ -96,6 +96,7 @@ export const createHabitInputSchema = z.object({
   name: z.string().min(1).max(HABIT_NAME_MAX_LENGTH),
   frequency: frequencySchema,
   color: z.string().min(1),
+  reminderTime: z.string().nullable().optional(),
 });
 
 export type CreateHabitInput = z.infer<typeof createHabitInputSchema>;

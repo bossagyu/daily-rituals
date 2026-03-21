@@ -15,6 +15,8 @@ describe('validateHabitForm', () => {
     weeklyDays: [],
     weeklyCount: 1,
     color: PRESET_COLORS[0],
+    reminderEnabled: false,
+    reminderTime: '',
   };
 
   describe('daily frequency', () => {
@@ -70,6 +72,8 @@ describe('validateHabitForm', () => {
       weeklyDays: [1, 3, 5],
       weeklyCount: 1,
       color: PRESET_COLORS[1],
+      reminderEnabled: false,
+      reminderTime: '',
     };
 
     it('should pass with valid days selected', () => {
@@ -108,6 +112,8 @@ describe('validateHabitForm', () => {
       weeklyDays: [],
       weeklyCount: 3,
       color: PRESET_COLORS[2],
+      reminderEnabled: false,
+      reminderTime: '',
     };
 
     it('should pass with valid count', () => {
@@ -157,6 +163,53 @@ describe('validateHabitForm', () => {
       }
     });
   });
+
+  describe('reminder validation', () => {
+    const validDailyState: HabitFormState = {
+      name: '読書',
+      frequencyType: 'daily',
+      weeklyDays: [],
+      weeklyCount: 1,
+      color: PRESET_COLORS[0],
+      reminderEnabled: false,
+      reminderTime: '',
+    };
+
+    it('should pass with reminder enabled and time set', () => {
+      const state: HabitFormState = {
+        ...validDailyState,
+        reminderEnabled: true,
+        reminderTime: '08:00',
+      };
+      const result = validateHabitForm(state);
+      expect(result.isValid).toBe(true);
+    });
+
+    it('should fail with reminder enabled but no time set', () => {
+      const state: HabitFormState = {
+        ...validDailyState,
+        reminderEnabled: true,
+        reminderTime: '',
+      };
+      const result = validateHabitForm(state);
+      expect(result.isValid).toBe(false);
+      if (!result.isValid) {
+        expect(result.errors['reminderTime']).toBe(
+          'リマインダー時刻を選択してください'
+        );
+      }
+    });
+
+    it('should skip reminder validation when disabled', () => {
+      const state: HabitFormState = {
+        ...validDailyState,
+        reminderEnabled: false,
+        reminderTime: '',
+      };
+      const result = validateHabitForm(state);
+      expect(result.isValid).toBe(true);
+    });
+  });
 });
 
 describe('toCreateHabitInput', () => {
@@ -167,6 +220,8 @@ describe('toCreateHabitInput', () => {
       weeklyDays: [],
       weeklyCount: 1,
       color: PRESET_COLORS[0],
+      reminderEnabled: false,
+      reminderTime: '',
     };
 
     const result = toCreateHabitInput(state, 'user-abc-123');
@@ -176,6 +231,7 @@ describe('toCreateHabitInput', () => {
       name: '読書',
       frequency: { type: 'daily' },
       color: PRESET_COLORS[0],
+      reminderTime: null,
     });
   });
 
@@ -186,6 +242,8 @@ describe('toCreateHabitInput', () => {
       weeklyDays: [1, 3, 5],
       weeklyCount: 1,
       color: PRESET_COLORS[1],
+      reminderEnabled: false,
+      reminderTime: '',
     };
 
     const result = toCreateHabitInput(state, 'user-abc-123');
@@ -195,6 +253,7 @@ describe('toCreateHabitInput', () => {
       name: '運動',
       frequency: { type: 'weekly_days', days: [1, 3, 5] },
       color: PRESET_COLORS[1],
+      reminderTime: null,
     });
   });
 
@@ -205,6 +264,8 @@ describe('toCreateHabitInput', () => {
       weeklyDays: [],
       weeklyCount: 3,
       color: PRESET_COLORS[2],
+      reminderEnabled: false,
+      reminderTime: '',
     };
 
     const result = toCreateHabitInput(state, 'user-abc-123');
@@ -214,6 +275,7 @@ describe('toCreateHabitInput', () => {
       name: 'ジョギング',
       frequency: { type: 'weekly_count', count: 3 },
       color: PRESET_COLORS[2],
+      reminderTime: null,
     });
   });
 
@@ -224,6 +286,8 @@ describe('toCreateHabitInput', () => {
       weeklyDays: [],
       weeklyCount: 1,
       color: PRESET_COLORS[0],
+      reminderEnabled: false,
+      reminderTime: '',
     };
 
     const result = toCreateHabitInput(state, 'user-abc-123');
@@ -253,6 +317,8 @@ describe('habitToFormState', () => {
       weeklyDays: [],
       weeklyCount: 1,
       color: PRESET_COLORS[0],
+      reminderEnabled: false,
+      reminderTime: '',
     });
   });
 
@@ -277,6 +343,8 @@ describe('habitToFormState', () => {
       weeklyDays: [1, 3, 5],
       weeklyCount: 1,
       color: PRESET_COLORS[1],
+      reminderEnabled: false,
+      reminderTime: '',
     });
   });
 
@@ -301,7 +369,47 @@ describe('habitToFormState', () => {
       weeklyDays: [],
       weeklyCount: 3,
       color: PRESET_COLORS[2],
+      reminderEnabled: false,
+      reminderTime: '',
     });
+  });
+
+  it('should convert habit with reminderTime to form state with reminderEnabled true', () => {
+    const habit: Habit = {
+      id: '4',
+      userId: 'user-abc-123',
+      name: '瞑想',
+      frequency: { type: 'daily' },
+      color: PRESET_COLORS[0],
+      createdAt: '2026-01-01T00:00:00.000Z',
+      archivedAt: null,
+      reminderTime: '07:00:00',
+      lastNotifiedDate: null,
+    };
+
+    const result = habitToFormState(habit);
+
+    expect(result.reminderEnabled).toBe(true);
+    expect(result.reminderTime).toBe('07:00');
+  });
+
+  it('should convert habit without reminderTime to form state with reminderEnabled false', () => {
+    const habit: Habit = {
+      id: '5',
+      userId: 'user-abc-123',
+      name: '瞑想',
+      frequency: { type: 'daily' },
+      color: PRESET_COLORS[0],
+      createdAt: '2026-01-01T00:00:00.000Z',
+      archivedAt: null,
+      reminderTime: null,
+      lastNotifiedDate: null,
+    };
+
+    const result = habitToFormState(habit);
+
+    expect(result.reminderEnabled).toBe(false);
+    expect(result.reminderTime).toBe('');
   });
 });
 
@@ -312,6 +420,8 @@ describe('INITIAL_FORM_STATE', () => {
     expect(INITIAL_FORM_STATE.weeklyDays).toEqual([]);
     expect(INITIAL_FORM_STATE.weeklyCount).toBe(1);
     expect(INITIAL_FORM_STATE.color).toBe(PRESET_COLORS[0]);
+    expect(INITIAL_FORM_STATE.reminderEnabled).toBe(false);
+    expect(INITIAL_FORM_STATE.reminderTime).toBe('');
   });
 });
 
