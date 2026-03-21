@@ -11,10 +11,16 @@ import { HabitForm } from '@/ui/components/HabitForm';
 import { useHabits } from '@/hooks/useHabits';
 import { useAuthContext } from '@/hooks/useAuthContext';
 import { useRepositories } from '@/hooks/useRepositories';
+import { usePushSubscription } from '@/hooks/usePushSubscription';
 import {
   habitToFormState,
   toCreateHabitInput,
 } from '@/domain/models/habitFormValidation';
+import {
+  localTimeToUtc,
+  utcToLocalTime,
+  getBrowserTimezoneOffset,
+} from '@/lib/reminderTime';
 import type { HabitFormState } from '@/domain/models/habitFormValidation';
 import type { Habit } from '@/domain/models/habit';
 
@@ -22,8 +28,10 @@ export function HabitDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuthContext();
-  const { habitRepository } = useRepositories();
+  const { habitRepository, pushSubscriptionRepository } = useRepositories();
   const { updateHabit, archiveHabit } = useHabits(habitRepository);
+  const { permissionState, requestPermission, ensureSubscription } =
+    usePushSubscription(pushSubscriptionRepository);
 
   const [habit, setHabit] = useState<Habit | null>(null);
   const [isLoadingHabit, setIsLoadingHabit] = useState(true);
@@ -83,7 +91,15 @@ export function HabitDetailPage() {
       setSubmitError(null);
       try {
         const input = toCreateHabitInput(formState, user.id);
-        await updateHabit(id, input);
+        const reminderTimeUtc = formState.reminderEnabled
+          ? localTimeToUtc(formState.reminderTime, getBrowserTimezoneOffset())
+          : null;
+
+        if (formState.reminderEnabled) {
+          await ensureSubscription();
+        }
+
+        await updateHabit(id, { ...input, reminderTime: reminderTimeUtc });
         navigate('/habits');
       } catch (error: unknown) {
         const message =
@@ -93,7 +109,7 @@ export function HabitDetailPage() {
         setIsSubmitting(false);
       }
     },
-    [user, id, updateHabit, navigate],
+    [user, id, updateHabit, ensureSubscription, navigate],
   );
 
   const handleArchive = useCallback(async () => {
@@ -161,10 +177,21 @@ export function HabitDetailPage() {
       )}
 
       <HabitForm
-        initialState={habitToFormState(habit)}
+        initialState={(() => {
+          const formInitialState = habitToFormState(habit);
+          const localReminderTime = formInitialState.reminderTime
+            ? utcToLocalTime(formInitialState.reminderTime, getBrowserTimezoneOffset())
+            : '';
+          return {
+            ...formInitialState,
+            reminderTime: localReminderTime,
+          };
+        })()}
         onSubmit={handleSubmit}
         isSubmitting={isSubmitting}
         submitLabel="更新する"
+        permissionState={permissionState}
+        onRequestPermission={requestPermission}
       />
     </div>
   );

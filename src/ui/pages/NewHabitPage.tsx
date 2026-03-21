@@ -10,14 +10,18 @@ import { HabitForm } from '@/ui/components/HabitForm';
 import { useHabits } from '@/hooks/useHabits';
 import { useAuthContext } from '@/hooks/useAuthContext';
 import { useRepositories } from '@/hooks/useRepositories';
+import { usePushSubscription } from '@/hooks/usePushSubscription';
 import { toCreateHabitInput } from '@/domain/models/habitFormValidation';
+import { localTimeToUtc, getBrowserTimezoneOffset } from '@/lib/reminderTime';
 import type { HabitFormState } from '@/domain/models/habitFormValidation';
 
 export function NewHabitPage() {
   const navigate = useNavigate();
   const { user } = useAuthContext();
-  const { habitRepository } = useRepositories();
+  const { habitRepository, pushSubscriptionRepository } = useRepositories();
   const { createHabit } = useHabits(habitRepository);
+  const { permissionState, requestPermission, ensureSubscription } =
+    usePushSubscription(pushSubscriptionRepository);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -30,7 +34,15 @@ export function NewHabitPage() {
       setSubmitError(null);
       try {
         const input = toCreateHabitInput(formState, user.id);
-        await createHabit(input);
+        const reminderTimeUtc = formState.reminderEnabled
+          ? localTimeToUtc(formState.reminderTime, getBrowserTimezoneOffset())
+          : null;
+
+        if (formState.reminderEnabled) {
+          await ensureSubscription();
+        }
+
+        await createHabit({ ...input, reminderTime: reminderTimeUtc });
         navigate('/habits');
       } catch (error: unknown) {
         const message =
@@ -40,7 +52,7 @@ export function NewHabitPage() {
         setIsSubmitting(false);
       }
     },
-    [user, createHabit, navigate],
+    [user, createHabit, ensureSubscription, navigate],
   );
 
   return (
@@ -62,6 +74,8 @@ export function NewHabitPage() {
         onSubmit={handleSubmit}
         isSubmitting={isSubmitting}
         submitLabel="追加する"
+        permissionState={permissionState}
+        onRequestPermission={requestPermission}
       />
     </div>
   );
