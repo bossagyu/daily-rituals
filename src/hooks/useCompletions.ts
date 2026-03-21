@@ -11,7 +11,6 @@ import type { Completion } from '../domain/models';
 import { useNavigate } from 'react-router-dom';
 import {
   buildIsCompleted,
-  computeOptimisticCompletions,
   loadCompletionsByDate,
   performToggleWithRetry,
   extractErrorMessage,
@@ -94,26 +93,21 @@ export function useCompletions(
 
   const toggleCompletion = useCallback(
     async (habitId: string, toggleDate: string): Promise<void> => {
-      const previousCompletions = completionsRef.current;
-      const optimistic = computeOptimisticCompletions(previousCompletions, habitId, toggleDate);
-      setState((prev) => ({ ...prev, completions: optimistic, error: null }));
-
       try {
-        const confirmedCompletions = await performToggleWithRetry(
+        const newCompletions = await performToggleWithRetry(
           repository,
-          previousCompletions,
+          completionsRef.current,
           habitId,
           toggleDate,
           sessionRefresher,
         );
-        setState((prev) => ({ ...prev, completions: confirmedCompletions, error: null }));
+        setState((prev) => ({ ...prev, completions: newCompletions, error: null }));
       } catch (err) {
         if (err instanceof SessionExpiredError) {
-          setState((prev) => ({ ...prev, completions: previousCompletions }));
           navigate('/login', { replace: true });
           return;
         }
-        setState((prev) => ({ ...prev, completions: previousCompletions, error: extractErrorMessage(err) }));
+        setState((prev) => ({ ...prev, error: extractErrorMessage(err) }));
       }
     },
     [repository, sessionRefresher, navigate],
