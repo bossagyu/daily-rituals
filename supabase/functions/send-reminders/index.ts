@@ -59,15 +59,18 @@ function getCurrentDayOfWeek(): number {
 
 Deno.serve(async (req: Request) => {
   // Deployed with --no-verify-jwt to bypass Edge Runtime JWT issues with pg_cron.
-  // Custom auth check ensures only service_role_key bearers can invoke this function.
-  const authHeader = req.headers.get('Authorization');
-  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-  if (!serviceRoleKey || authHeader !== `Bearer ${serviceRoleKey}`) {
-    return new Response('Unauthorized', { status: 401 });
+  // Auth via dedicated CRON_SECRET header to prevent unauthorized access.
+  const cronSecret = Deno.env.get('CRON_SECRET');
+  if (cronSecret) {
+    const authHeader = req.headers.get('x-cron-secret');
+    if (authHeader !== cronSecret) {
+      return new Response('Unauthorized', { status: 401 });
+    }
   }
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL');
-  if (!supabaseUrl) {
+  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  if (!supabaseUrl || !serviceRoleKey) {
     return new Response('Missing environment configuration', { status: 500 });
   }
 
