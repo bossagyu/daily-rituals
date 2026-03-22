@@ -33,7 +33,7 @@ const archivedHabit: Habit = {
 };
 
 describe('HabitCard', () => {
-  const mockOnArchive = vi.fn();
+  const mockOnRestore = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -42,7 +42,7 @@ describe('HabitCard', () => {
   it('renders habit name and frequency', () => {
     render(
       <MemoryRouter>
-        <HabitCard habit={activeHabit} onArchive={mockOnArchive} isArchived={false} />
+        <HabitCard habit={activeHabit} isArchived={false} />
       </MemoryRouter>,
     );
     expect(screen.getByText('読書する')).toBeInTheDocument();
@@ -52,27 +52,26 @@ describe('HabitCard', () => {
   it('renders edit link pointing to /habits/:id', () => {
     render(
       <MemoryRouter>
-        <HabitCard habit={activeHabit} onArchive={mockOnArchive} isArchived={false} />
+        <HabitCard habit={activeHabit} isArchived={false} />
       </MemoryRouter>,
     );
     const link = screen.getByRole('link');
     expect(link).toHaveAttribute('href', '/habits/h1');
   });
 
-  it('does not show archive button for active habits', () => {
+  it('does not show restore button for active habits', () => {
     render(
       <MemoryRouter>
-        <HabitCard habit={activeHabit} onArchive={mockOnArchive} isArchived={false} />
+        <HabitCard habit={activeHabit} isArchived={false} />
       </MemoryRouter>,
     );
-    expect(screen.queryByText('アーカイブ')).not.toBeInTheDocument();
     expect(screen.queryByText('復元')).not.toBeInTheDocument();
   });
 
   it('shows restore button for archived habits', () => {
     render(
       <MemoryRouter>
-        <HabitCard habit={archivedHabit} onArchive={mockOnArchive} isArchived={true} />
+        <HabitCard habit={archivedHabit} onRestore={mockOnRestore} isArchived={true} />
       </MemoryRouter>,
     );
     expect(screen.getByText('復元')).toBeInTheDocument();
@@ -81,17 +80,17 @@ describe('HabitCard', () => {
   it('calls onArchive when restore button is clicked', () => {
     render(
       <MemoryRouter>
-        <HabitCard habit={archivedHabit} onArchive={mockOnArchive} isArchived={true} />
+        <HabitCard habit={archivedHabit} onRestore={mockOnRestore} isArchived={true} />
       </MemoryRouter>,
     );
     fireEvent.click(screen.getByText('復元'));
-    expect(mockOnArchive).toHaveBeenCalledWith('h2');
+    expect(mockOnRestore).toHaveBeenCalledWith('h2');
   });
 
   it('applies line-through style for archived habits', () => {
     render(
       <MemoryRouter>
-        <HabitCard habit={archivedHabit} onArchive={mockOnArchive} isArchived={true} />
+        <HabitCard habit={archivedHabit} onRestore={mockOnRestore} isArchived={true} />
       </MemoryRouter>,
     );
     const name = screen.getByText('瞑想する');
@@ -105,7 +104,7 @@ describe('HabitCard', () => {
     };
     render(
       <MemoryRouter>
-        <HabitCard habit={weeklyHabit} onArchive={mockOnArchive} isArchived={false} />
+        <HabitCard habit={weeklyHabit} isArchived={false} />
       </MemoryRouter>,
     );
     expect(screen.getByText('月・水・金')).toBeInTheDocument();
@@ -118,7 +117,7 @@ describe('HabitCard', () => {
     };
     render(
       <MemoryRouter>
-        <HabitCard habit={countHabit} onArchive={mockOnArchive} isArchived={false} />
+        <HabitCard habit={countHabit} isArchived={false} />
       </MemoryRouter>,
     );
     expect(screen.getByText('週3回')).toBeInTheDocument();
@@ -127,7 +126,7 @@ describe('HabitCard', () => {
   it('renders color indicator with correct background color', () => {
     const { container } = render(
       <MemoryRouter>
-        <HabitCard habit={activeHabit} onArchive={mockOnArchive} isArchived={false} />
+        <HabitCard habit={activeHabit} isArchived={false} />
       </MemoryRouter>,
     );
     const colorDot = container.querySelector('[aria-hidden="true"]');

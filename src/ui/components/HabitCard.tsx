@@ -10,11 +10,11 @@ import { formatFrequency } from '@/domain/services/frequencyDisplayService';
 
 type HabitCardProps = {
   readonly habit: Habit;
-  readonly onArchive: (id: string) => void;
+  readonly onRestore?: (id: string) => void;
   readonly isArchived: boolean;
 };
 
-export function HabitCard({ habit, onArchive, isArchived }: HabitCardProps) {
+export function HabitCard({ habit, onRestore, isArchived }: HabitCardProps) {
   return (
     <div className="flex items-center gap-3 rounded-lg border border-border bg-card p-4 shadow-sm transition-colors hover:bg-muted/30">
       <div
@@ -37,12 +37,12 @@ export function HabitCard({ habit, onArchive, isArchived }: HabitCardProps) {
         </span>
       </Link>
 
-      {isArchived && (
+      {isArchived && onRestore && (
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => onArchive(habit.id)}
-          aria-label={`${habit.name}をアーカイブ解除`}
+          onClick={() => onRestore(habit.id)}
+          aria-label={`${habit.name}を復元`}
         >
           復元
         </Button>

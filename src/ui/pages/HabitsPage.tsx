@@ -20,7 +20,7 @@ export function HabitsPage() {
     toggleShowArchived,
     isLoading,
     error,
-    archiveHabit,
+    unarchiveHabit,
   } = useHabitList(habitRepository);
 
   return (
@@ -74,7 +74,7 @@ export function HabitsPage() {
             <HabitCard
               key={habit.id}
               habit={habit}
-              onArchive={archiveHabit}
+              onRestore={unarchiveHabit}
               isArchived={habit.archivedAt !== null}
             />
           ))}

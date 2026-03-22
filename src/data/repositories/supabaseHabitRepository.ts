@@ -153,6 +153,17 @@ export const createSupabaseHabitRepository = (
     }
   },
 
+  async unarchive(id: string): Promise<void> {
+    const { error } = await client
+      .from('habits')
+      .update({ archived_at: null })
+      .eq('id', id);
+
+    if (error) {
+      throw new Error(`Failed to unarchive habit: ${error.message}`);
+    }
+  },
+
   async remove(id: string): Promise<void> {
     const { error } = await client
       .from('habits')
