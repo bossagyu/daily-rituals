@@ -1,3 +1,6 @@
+import type { Habit } from '../models/habit';
+import type { Completion } from '../models/completion';
+
 const DAYS_IN_WEEK = 7;
 const WEEKS_IN_GRID = 6;
 const GRID_SIZE = DAYS_IN_WEEK * WEEKS_IN_GRID;
@@ -78,4 +81,96 @@ export function getHeatmapLevel(rate: number): HeatmapLevel {
   if (rate <= LOW_THRESHOLD) return 1;
   if (rate <= MID_THRESHOLD) return 2;
   return 3;
+}
+
+export type DayAchievement = {
+  readonly date: string;
+  readonly completedCount: number;
+  readonly targetCount: number;
+  readonly rate: number;
+  readonly completedHabitNames: readonly string[];
+  readonly isTargetDay: boolean;
+};
+
+function isHabitActiveOnDate(habit: Habit, date: string): boolean {
+  const createdDate = habit.createdAt.slice(0, 10);
+  if (date < createdDate) return false;
+
+  if (habit.archivedAt !== null) {
+    const archivedDate = habit.archivedAt.slice(0, 10);
+    if (date > archivedDate) return false;
+  }
+
+  return true;
+}
+
+function isHabitDueOnDate(habit: Habit, date: string): boolean {
+  if (habit.frequency.type === 'weekly_count') return false;
+  if (habit.frequency.type === 'daily') return true;
+
+  const dayOfWeek = new Date(date + 'T00:00:00').getDay();
+  return habit.frequency.days.includes(dayOfWeek);
+}
+
+function addDays(dateStr: string, days: number): string {
+  const d = new Date(dateStr + 'T00:00:00');
+  d.setDate(d.getDate() + days);
+  return `${d.getFullYear()}-${padTwo(d.getMonth() + 1)}-${padTwo(d.getDate())}`;
+}
+
+export function calculateDailyAchievements(
+  habits: readonly Habit[],
+  completions: readonly Completion[],
+  startDate: string,
+  endDate: string,
+): readonly DayAchievement[] {
+  const completionsByDate = new Map<string, Set<string>>();
+  for (const c of completions) {
+    const existing = completionsByDate.get(c.completedDate) ?? new Set();
+    completionsByDate.set(c.completedDate, new Set([...existing, c.habitId]));
+  }
+
+  const habitNameMap = new Map(habits.map((h) => [h.id, h.name]));
+
+  const results: DayAchievement[] = [];
+  let current = startDate;
+
+  while (current <= endDate) {
+    const completedIds = completionsByDate.get(current) ?? new Set();
+
+    let targetCount = 0;
+    let completedCount = 0;
+    const completedHabitNames: string[] = [];
+
+    for (const habit of habits) {
+      if (!isHabitActiveOnDate(habit, current)) continue;
+
+      if (isHabitDueOnDate(habit, current)) {
+        targetCount++;
+      }
+
+      if (completedIds.has(habit.id)) {
+        completedCount++;
+        const name = habitNameMap.get(habit.id);
+        if (name) {
+          completedHabitNames.push(name);
+        }
+      }
+    }
+
+    const rate = targetCount > 0 ? completedCount / targetCount : 0;
+
+    results.push({
+      date: current,
+      completedCount,
+      targetCount,
+      rate: Math.min(rate, 1),
+      completedHabitNames,
+      isTargetDay: targetCount > 0,
+    });
+
+    current = addDays(current, 1);
+  }
+
+  return results;
 }
