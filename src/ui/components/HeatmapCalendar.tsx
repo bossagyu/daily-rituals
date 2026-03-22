@@ -30,11 +30,11 @@ type HeatmapCalendarProps = {
 const DAY_HEADERS = ['日', '月', '火', '水', '木', '金', '土'] as const;
 
 const HEATMAP_CLASSES: Record<HeatmapLevel, string> = {
-  0: 'bg-muted',
-  1: 'bg-primary/20',
-  2: 'bg-primary/50',
-  3: 'bg-primary/75',
-  4: 'bg-primary',
+  0: 'bg-muted text-muted-foreground',
+  1: 'bg-primary/20 text-foreground',
+  2: 'bg-primary/50 text-white',
+  3: 'bg-primary/75 text-white',
+  4: 'bg-primary text-white',
 };
 
 // --- Utilities ---
@@ -56,6 +56,7 @@ function getHeatmapStyle(
   if (filterMode === 'habit' && selectedHabitColor && level > 0) {
     const opacity = level === 1 ? 0.3 : level === 2 ? 0.5 : level === 3 ? 0.7 : 1;
     return {
+      className: level >= 2 ? 'text-white' : 'text-foreground',
       style: { backgroundColor: selectedHabitColor, opacity },
     };
   }
