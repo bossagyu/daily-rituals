@@ -29,10 +29,10 @@ export function TodayHabitCard({
 }: TodayHabitCardProps) {
   return (
     <div
-      className={`flex items-center gap-3 rounded-lg border p-4 shadow-sm transition-colors ${
+      className={`flex items-center gap-3 rounded-2xl border p-4 shadow-sm transition-all ${
         isCompleted
-          ? 'border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950'
-          : 'border-border bg-card'
+          ? 'border-emerald-500/20 bg-emerald-500/5'
+          : 'border-border bg-card hover:border-primary/20'
       }`}
     >
       <div
@@ -58,8 +58,8 @@ export function TodayHabitCard({
 
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           {streak.current > 0 && (
-            <span className="font-medium text-orange-500">
-              {streak.current}日連続
+            <span className="font-medium text-primary">
+              🔥 {streak.current}日連続
             </span>
           )}
           {habit.frequency.type === 'weekly_count' && (
