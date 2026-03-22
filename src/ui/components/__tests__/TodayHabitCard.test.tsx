@@ -35,7 +35,14 @@ describe('TodayHabitCard', () => {
     expect(screen.getByText('読書する')).toBeInTheDocument();
   });
 
-  it('does not show reminder time even when set', () => {
+  it('does not show reminder time when reminderTime is null', () => {
+    render(
+      <TodayHabitCard habit={baseHabit} {...defaultProps} />,
+    );
+    expect(screen.queryByText(/通知/)).not.toBeInTheDocument();
+  });
+
+  it('shows reminder time when reminderTime is set', () => {
     const habitWithReminder: Habit = {
       ...baseHabit,
       reminderTime: '09:00:00',
@@ -43,6 +50,6 @@ describe('TodayHabitCard', () => {
     render(
       <TodayHabitCard habit={habitWithReminder} {...defaultProps} />,
     );
-    expect(screen.queryByText(/通知/)).not.toBeInTheDocument();
+    expect(screen.getByText(/通知/)).toBeInTheDocument();
   });
 });
