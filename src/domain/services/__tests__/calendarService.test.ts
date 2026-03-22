@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { generateCalendarGrid } from '../calendarService';
+import { generateCalendarGrid, getHeatmapLevel } from '../calendarService';
 
 describe('generateCalendarGrid', () => {
   it('generates 42 cells (6 weeks) for any month', () => {
@@ -53,5 +53,39 @@ describe('generateCalendarGrid', () => {
     for (const day of grid) {
       expect(day.date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     }
+  });
+});
+
+describe('getHeatmapLevel', () => {
+  it('returns 0 for 0%', () => {
+    expect(getHeatmapLevel(0)).toBe(0);
+  });
+
+  it('returns 1 for 1%', () => {
+    expect(getHeatmapLevel(0.01)).toBe(1);
+  });
+
+  it('returns 1 for 33%', () => {
+    expect(getHeatmapLevel(0.33)).toBe(1);
+  });
+
+  it('returns 2 for 34%', () => {
+    expect(getHeatmapLevel(0.34)).toBe(2);
+  });
+
+  it('returns 2 for 66%', () => {
+    expect(getHeatmapLevel(0.66)).toBe(2);
+  });
+
+  it('returns 3 for 67%', () => {
+    expect(getHeatmapLevel(0.67)).toBe(3);
+  });
+
+  it('returns 3 for 99%', () => {
+    expect(getHeatmapLevel(0.99)).toBe(3);
+  });
+
+  it('returns 4 for 100%', () => {
+    expect(getHeatmapLevel(1.0)).toBe(4);
   });
 });

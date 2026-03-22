@@ -66,3 +66,16 @@ export function generateCalendarGrid(
 
   return grid;
 }
+
+export type HeatmapLevel = 0 | 1 | 2 | 3 | 4;
+
+const LOW_THRESHOLD = 0.33;
+const MID_THRESHOLD = 0.66;
+
+export function getHeatmapLevel(rate: number): HeatmapLevel {
+  if (rate <= 0) return 0;
+  if (rate >= 1) return 4;
+  if (rate <= LOW_THRESHOLD) return 1;
+  if (rate <= MID_THRESHOLD) return 2;
+  return 3;
+}
