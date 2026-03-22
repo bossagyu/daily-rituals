@@ -6,6 +6,7 @@ import React from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
 import type { Habit } from '@/domain/models/habit';
 import type { Streak } from '@/domain/models/streak';
+import { utcToLocalTime, getBrowserTimezoneOffset } from '@/lib/reminderTime';
 
 type WeeklyProgress = {
   readonly done: number;
@@ -65,6 +66,11 @@ export function TodayHabitCard({
           {habit.frequency.type === 'weekly_count' && (
             <span>
               今週 {weeklyProgress.done}/{weeklyProgress.target}
+            </span>
+          )}
+          {habit.reminderTime && (
+            <span>
+              通知 {utcToLocalTime(habit.reminderTime.substring(0, 5), getBrowserTimezoneOffset())}
             </span>
           )}
         </div>
