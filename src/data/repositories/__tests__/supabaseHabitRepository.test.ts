@@ -264,6 +264,40 @@ describe('SupabaseHabitRepository', () => {
       expect(result.frequency).toEqual({ type: 'weekly_days', days: [1, 3, 5] });
     });
 
+    it('should include reminder_time when creating habit with reminder', async () => {
+      const input: CreateHabitInput = {
+        userId: USER_ID,
+        name: 'Reading',
+        frequency: { type: 'daily' },
+        color: '#FF0000',
+        reminderTime: '09:00',
+      };
+
+      const rowWithReminder: HabitRow = {
+        ...sampleHabitRow,
+        name: 'Reading',
+        reminder_time: '09:00',
+      };
+
+      mock.chain.single.mockResolvedValue({
+        data: rowWithReminder,
+        error: null,
+      });
+
+      const repo = createSupabaseHabitRepository(mock.client, USER_ID);
+      const result = await repo.create(input);
+
+      expect(mock.chain.insert).toHaveBeenCalledWith({
+        user_id: USER_ID,
+        name: 'Reading',
+        frequency_type: 'daily',
+        frequency_value: '{}',
+        color: '#FF0000',
+        reminder_time: '09:00',
+      });
+      expect(result.reminderTime).toBe('09:00');
+    });
+
     it('should throw on Supabase error', async () => {
       const input: CreateHabitInput = {
         userId: USER_ID,
@@ -411,6 +445,31 @@ describe('SupabaseHabitRepository', () => {
       const repo = createSupabaseHabitRepository(mock.client, USER_ID);
       await expect(repo.archive('habit-1')).rejects.toThrow(
         'Failed to archive habit: Archive failed',
+      );
+    });
+  });
+
+  describe('remove', () => {
+    it('should delete the habit by id', async () => {
+      mock.chain.eq.mockResolvedValue({ data: null, error: null });
+
+      const repo = createSupabaseHabitRepository(mock.client, USER_ID);
+      await repo.remove('habit-1');
+
+      expect(mock.from).toHaveBeenCalledWith('habits');
+      expect(mock.chain.delete).toHaveBeenCalled();
+      expect(mock.chain.eq).toHaveBeenCalledWith('id', 'habit-1');
+    });
+
+    it('should throw on Supabase error', async () => {
+      mock.chain.eq.mockResolvedValue({
+        data: null,
+        error: { message: 'Delete failed' },
+      });
+
+      const repo = createSupabaseHabitRepository(mock.client, USER_ID);
+      await expect(repo.remove('habit-1')).rejects.toThrow(
+        'Failed to delete habit: Delete failed',
       );
     });
   });
