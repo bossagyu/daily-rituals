@@ -110,22 +110,6 @@ export function CalendarPage() {
     return habit?.color;
   }, [filter, allHabits]);
 
-  if (isLoading) {
-    return (
-      <div className="mx-auto w-full max-w-2xl px-4 py-6">
-        <LoadingState />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="mx-auto w-full max-w-2xl px-4 py-6">
-        <ErrorState message={error} />
-      </div>
-    );
-  }
-
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-6">
       <header className="mb-6">
@@ -140,14 +124,20 @@ export function CalendarPage() {
         onNext={goToNextMonth}
       />
 
-      <div className="mb-6">
-        <HeatmapCalendar
-          calendarGrid={calendarGrid}
-          achievements={achievements}
-          filterMode={filter.mode === 'all' ? 'all' : 'habit'}
-          selectedHabitColor={selectedHabitColor}
-        />
-      </div>
+      {error && <ErrorState message={error} />}
+
+      {isLoading ? (
+        <LoadingState />
+      ) : (
+        <div className="mb-6">
+          <HeatmapCalendar
+            calendarGrid={calendarGrid}
+            achievements={achievements}
+            filterMode={filter.mode === 'all' ? 'all' : 'habit'}
+            selectedHabitColor={selectedHabitColor}
+          />
+        </div>
+      )}
 
       <div>
         <h3 className="mb-2 text-sm font-medium text-muted-foreground">
