@@ -69,6 +69,7 @@ export default defineConfig({
     include: [
       'src/**/__tests__/**/*.test.{ts,tsx}',
       'supabase/functions/**/__tests__/**/*.test.ts',
+      'api/__tests__/**/*.test.ts',
     ],
     coverage: {
       provider: 'v8',
