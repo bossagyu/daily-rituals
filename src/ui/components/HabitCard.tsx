@@ -16,7 +16,7 @@ type HabitCardProps = {
 
 export function HabitCard({ habit, onRestore, isArchived }: HabitCardProps) {
   return (
-    <div className="flex items-center gap-3 rounded-lg border border-border bg-card p-4 shadow-sm transition-colors hover:bg-muted/30">
+    <div className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm transition-all hover:border-primary/20 hover:translate-x-1">
       <div
         className="h-4 w-4 shrink-0 rounded-full"
         style={{ backgroundColor: habit.color }}
