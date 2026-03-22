@@ -134,6 +134,81 @@ function loadEnvConfig(): EnvConfig | null {
   };
 }
 
+// --- Notification sending ---
+
+type SendResult = {
+  readonly totalSent: number;
+  readonly notifiedHabitIds: readonly string[];
+};
+
+async function sendNotificationsPerUser(
+  habitsByUser: ReadonlyMap<string, readonly string[]>,
+  incompleteHabits: readonly HabitRow[],
+  supabase: ReturnType<typeof createClient>,
+): Promise<SendResult> {
+  let totalSent = 0;
+  let notifiedHabitIds: readonly string[] = [];
+
+  for (const [userId, habitNames] of habitsByUser) {
+    const body = buildNotificationBody(habitNames);
+    if (!body) {
+      continue;
+    }
+
+    const payload = JSON.stringify({
+      title: 'Daily Rituals',
+      body,
+      icon: '/icon-192x192.png',
+      data: { url: '/' },
+    });
+
+    const { data: subscriptions } = await supabase
+      .from('push_subscriptions')
+      .select('endpoint, p256dh, auth')
+      .eq('user_id', userId);
+
+    if (!subscriptions || subscriptions.length === 0) {
+      continue;
+    }
+
+    let userSendSucceeded = false;
+
+    for (const sub of subscriptions as SubscriptionRow[]) {
+      try {
+        await webpush.sendNotification(
+          {
+            endpoint: sub.endpoint,
+            keys: { p256dh: sub.p256dh, auth: sub.auth },
+          },
+          payload,
+        );
+        totalSent = totalSent + 1;
+        userSendSucceeded = true;
+      } catch (error: unknown) {
+        if (
+          error instanceof Error &&
+          'statusCode' in error &&
+          (error as { statusCode: number }).statusCode === HTTP_GONE
+        ) {
+          await supabase
+            .from('push_subscriptions')
+            .delete()
+            .eq('endpoint', sub.endpoint);
+        }
+      }
+    }
+
+    if (userSendSucceeded) {
+      const userHabitIds = incompleteHabits
+        .filter((h) => h.user_id === userId)
+        .map((h) => h.id);
+      notifiedHabitIds = [...notifiedHabitIds, ...userHabitIds];
+    }
+  }
+
+  return { totalSent, notifiedHabitIds };
+}
+
 // --- Main handler ---
 
 export default async function handler(
@@ -269,75 +344,23 @@ export default async function handler(
     habitsByUser.set(h.user_id, [...names, h.name]);
   }
 
-  let totalSent = 0;
-  const notifiedHabitIds: string[] = [];
-
   // 6. Send notifications per user
-  for (const [userId, habitNames] of habitsByUser) {
-    const body = buildNotificationBody(habitNames);
-    if (!body) {
-      continue;
-    }
-
-    const payload = JSON.stringify({
-      title: 'Daily Rituals',
-      body,
-      icon: '/icon-192x192.png',
-      data: { url: '/' },
-    });
-
-    const { data: subscriptions } = await supabase
-      .from('push_subscriptions')
-      .select('endpoint, p256dh, auth')
-      .eq('user_id', userId);
-
-    if (!subscriptions || subscriptions.length === 0) {
-      continue;
-    }
-
-    let userSendSucceeded = false;
-
-    for (const sub of subscriptions as SubscriptionRow[]) {
-      try {
-        await webpush.sendNotification(
-          {
-            endpoint: sub.endpoint,
-            keys: { p256dh: sub.p256dh, auth: sub.auth },
-          },
-          payload,
-        );
-        totalSent++;
-        userSendSucceeded = true;
-      } catch (error: unknown) {
-        if (
-          error instanceof Error &&
-          'statusCode' in error &&
-          (error as { statusCode: number }).statusCode === HTTP_GONE
-        ) {
-          await supabase
-            .from('push_subscriptions')
-            .delete()
-            .eq('endpoint', sub.endpoint);
-        }
-      }
-    }
-
-    if (userSendSucceeded) {
-      for (const h of incompleteHabits) {
-        if (h.user_id === userId) {
-          notifiedHabitIds.push(h.id);
-        }
-      }
-    }
-  }
+  const results = await sendNotificationsPerUser(
+    habitsByUser,
+    incompleteHabits,
+    supabase,
+  );
 
   // 7. Update last_notified_date for notified habits
-  if (notifiedHabitIds.length > 0) {
+  if (results.notifiedHabitIds.length > 0) {
     await supabase
       .from('habits')
       .update({ last_notified_date: today })
-      .in('id', notifiedHabitIds);
+      .in('id', results.notifiedHabitIds);
   }
 
-  res.status(200).json({ sent: totalSent, habitsNotified: notifiedHabitIds.length });
+  res.status(200).json({
+    sent: results.totalSent,
+    habitsNotified: results.notifiedHabitIds.length,
+  });
 }
