@@ -31,6 +31,7 @@ export interface CompletionRepository {
     startDate: string,
     endDate: string,
   ): Promise<Completion[]>;
+  findByDateRange(startDate: string, endDate: string): Promise<Completion[]>;
   create(habitId: string, completedDate: string): Promise<Completion>;
   delete(habitId: string, completedDate: string): Promise<void>;
 }

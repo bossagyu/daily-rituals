@@ -220,4 +220,51 @@ describe('SupabaseCompletionRepository', () => {
       ).rejects.toThrow('Failed to delete completion: Delete failed');
     });
   });
+
+  describe('findByDateRange', () => {
+    it('queries completions within date range', async () => {
+      mock.chain.lte.mockResolvedValueOnce({
+        data: [sampleRow],
+        error: null,
+      });
+
+      const repo = createSupabaseCompletionRepository(mock.client, USER_ID);
+      const result = await repo.findByDateRange('2026-03-01', '2026-03-31');
+
+      expect(mock.from).toHaveBeenCalledWith('completions');
+      expect(mock.chain.gte).toHaveBeenCalledWith(
+        'completed_date',
+        '2026-03-01',
+      );
+      expect(mock.chain.lte).toHaveBeenCalledWith(
+        'completed_date',
+        '2026-03-31',
+      );
+      expect(result).toHaveLength(1);
+    });
+
+    it('returns empty array when no completions in range', async () => {
+      mock.chain.lte.mockResolvedValueOnce({
+        data: [],
+        error: null,
+      });
+
+      const repo = createSupabaseCompletionRepository(mock.client, USER_ID);
+      const result = await repo.findByDateRange('2026-03-01', '2026-03-31');
+
+      expect(result).toEqual([]);
+    });
+
+    it('throws on Supabase error', async () => {
+      mock.chain.lte.mockResolvedValueOnce({
+        data: null,
+        error: { message: 'DB error', code: '500' },
+      });
+
+      const repo = createSupabaseCompletionRepository(mock.client, USER_ID);
+      await expect(
+        repo.findByDateRange('2026-03-01', '2026-03-31'),
+      ).rejects.toThrow('Failed to fetch completions by date range');
+    });
+  });
 });
