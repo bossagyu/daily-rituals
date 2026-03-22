@@ -7,6 +7,7 @@
  */
 
 import React, { useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Popover,
   PopoverContent,
@@ -106,6 +107,12 @@ function PopoverContentAll({
       <p className="mt-1 text-[10px] text-muted-foreground">
         {achievement.completedCount}/{achievement.targetCount} 完了
       </p>
+      <Link
+        to={`/?date=${dateStr}`}
+        className="mt-2 block text-xs text-primary hover:underline"
+      >
+        この日を表示 →
+      </Link>
     </>
   );
 }
@@ -125,6 +132,12 @@ function PopoverContentHabit({
       <p className="text-sm font-medium">
         {achievement.completedCount > 0 ? '完了' : '未完了'}
       </p>
+      <Link
+        to={`/?date=${dateStr}`}
+        className="mt-2 block text-xs text-primary hover:underline"
+      >
+        この日を表示 →
+      </Link>
     </>
   );
 }
