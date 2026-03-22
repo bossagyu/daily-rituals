@@ -30,11 +30,11 @@ type HeatmapCalendarProps = {
 const DAY_HEADERS = ['日', '月', '火', '水', '木', '金', '土'] as const;
 
 const HEATMAP_CLASSES: Record<HeatmapLevel, string> = {
-  0: 'bg-muted/50',
-  1: 'bg-green-200 dark:bg-green-900',
-  2: 'bg-green-400 dark:bg-green-700',
-  3: 'bg-green-500 dark:bg-green-500',
-  4: 'bg-green-600 dark:bg-green-400',
+  0: 'bg-muted',
+  1: 'bg-primary/20',
+  2: 'bg-primary/50',
+  3: 'bg-primary/75',
+  4: 'bg-primary',
 };
 
 // --- Utilities ---

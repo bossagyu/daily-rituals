@@ -40,22 +40,55 @@ export type UseCalendarDataReturn = {
 
 // --- Utilities ---
 
-function padTwo(n: number): string {
-  return String(n).padStart(2, '0');
-}
-
-function getInitialYearMonth(): { year: number; month: number } {
+export function getInitialYearMonth(): { year: number; month: number } {
   const now = new Date();
   return { year: now.getFullYear(), month: now.getMonth() + 1 };
 }
 
-function getDateRange(
+export function getDateRange(
   grid: readonly CalendarDay[],
 ): { startDate: string; endDate: string } {
   return {
     startDate: grid[0].date,
     endDate: grid[grid.length - 1].date,
   };
+}
+
+export function canNavigateNext(year: number, month: number): boolean {
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1;
+  return year < currentYear || (year === currentYear && month < currentMonth);
+}
+
+export function navigatePreviousMonth(year: number, month: number): { year: number; month: number } {
+  if (month === 1) {
+    return { year: year - 1, month: 12 };
+  }
+  return { year, month: month - 1 };
+}
+
+export function navigateNextMonth(year: number, month: number): { year: number; month: number } {
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1;
+
+  if (year > currentYear) return { year, month };
+  if (year === currentYear && month >= currentMonth) return { year, month };
+
+  if (month === 12) {
+    return { year: year + 1, month: 1 };
+  }
+  return { year, month: month + 1 };
+}
+
+export function filterHabitsForCalculation(
+  allHabits: readonly Habit[],
+  filter: CalendarFilter,
+): readonly Habit[] {
+  return filter.mode === 'all'
+    ? allHabits
+    : allHabits.filter((h) => h.id === filter.habitId);
 }
 
 // --- Hook ---
@@ -138,44 +171,19 @@ export function useCalendarData(
 
     const { startDate, endDate } = getDateRange(calendarGrid);
 
-    const habitsForCalc =
-      filter.mode === 'all'
-        ? allHabits
-        : allHabits.filter((h) => h.id === filter.habitId);
+    const habitsForCalc = filterHabitsForCalculation(allHabits, filter);
 
     return calculateDailyAchievements(habitsForCalc, completions, startDate, endDate);
   }, [isLoading, allHabits, completions, calendarGrid, filter]);
 
-  const canGoNext = useMemo(() => {
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth() + 1;
-    return year < currentYear || (year === currentYear && month < currentMonth);
-  }, [year, month]);
+  const canGoNext = useMemo(() => canNavigateNext(year, month), [year, month]);
 
   const goToPreviousMonth = useCallback(() => {
-    setYearMonth((prev) => {
-      if (prev.month === 1) {
-        return { year: prev.year - 1, month: 12 };
-      }
-      return { ...prev, month: prev.month - 1 };
-    });
+    setYearMonth((prev) => navigatePreviousMonth(prev.year, prev.month));
   }, []);
 
   const goToNextMonth = useCallback(() => {
-    setYearMonth((prev) => {
-      const now = new Date();
-      const currentYear = now.getFullYear();
-      const currentMonth = now.getMonth() + 1;
-
-      if (prev.year > currentYear) return prev;
-      if (prev.year === currentYear && prev.month >= currentMonth) return prev;
-
-      if (prev.month === 12) {
-        return { year: prev.year + 1, month: 1 };
-      }
-      return { ...prev, month: prev.month + 1 };
-    });
+    setYearMonth((prev) => navigateNextMonth(prev.year, prev.month));
   }, []);
 
   return {

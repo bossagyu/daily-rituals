@@ -2,7 +2,7 @@
  * HabitFilter - Filter buttons for calendar heatmap view.
  *
  * Shows "すべて" (all) button and individual habit buttons.
- * Archived habits are labeled with "(archived)" and shown with reduced opacity.
+ * Archived habits are labeled with "(アーカイブ)" and shown with reduced opacity.
  */
 
 import React from 'react';
@@ -48,7 +48,7 @@ function FilterButton({
     >
       {label}
       {isArchived && (
-        <span className="ml-1 text-[10px] opacity-70">(archived)</span>
+        <span className="ml-1 text-[10px] opacity-70">(アーカイブ)</span>
       )}
     </button>
   );
