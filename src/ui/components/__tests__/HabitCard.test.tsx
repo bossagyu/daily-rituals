@@ -59,13 +59,14 @@ describe('HabitCard', () => {
     expect(link).toHaveAttribute('href', '/habits/h1');
   });
 
-  it('shows archive button for active habits', () => {
+  it('does not show archive button for active habits', () => {
     render(
       <MemoryRouter>
         <HabitCard habit={activeHabit} onArchive={mockOnArchive} isArchived={false} />
       </MemoryRouter>,
     );
-    expect(screen.getByText('アーカイブ')).toBeInTheDocument();
+    expect(screen.queryByText('アーカイブ')).not.toBeInTheDocument();
+    expect(screen.queryByText('復元')).not.toBeInTheDocument();
   });
 
   it('shows restore button for archived habits', () => {
@@ -77,14 +78,14 @@ describe('HabitCard', () => {
     expect(screen.getByText('復元')).toBeInTheDocument();
   });
 
-  it('calls onArchive when archive button is clicked', () => {
+  it('calls onArchive when restore button is clicked', () => {
     render(
       <MemoryRouter>
-        <HabitCard habit={activeHabit} onArchive={mockOnArchive} isArchived={false} />
+        <HabitCard habit={archivedHabit} onArchive={mockOnArchive} isArchived={true} />
       </MemoryRouter>,
     );
-    fireEvent.click(screen.getByText('アーカイブ'));
-    expect(mockOnArchive).toHaveBeenCalledWith('h1');
+    fireEvent.click(screen.getByText('復元'));
+    expect(mockOnArchive).toHaveBeenCalledWith('h2');
   });
 
   it('applies line-through style for archived habits', () => {

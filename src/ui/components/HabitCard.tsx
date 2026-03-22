@@ -37,18 +37,16 @@ export function HabitCard({ habit, onArchive, isArchived }: HabitCardProps) {
         </span>
       </Link>
 
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => onArchive(habit.id)}
-        aria-label={
-          isArchived
-            ? `${habit.name}をアーカイブ解除`
-            : `${habit.name}をアーカイブ`
-        }
-      >
-        {isArchived ? '復元' : 'アーカイブ'}
-      </Button>
+      {isArchived && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => onArchive(habit.id)}
+          aria-label={`${habit.name}をアーカイブ解除`}
+        >
+          復元
+        </Button>
+      )}
     </div>
   );
 }
