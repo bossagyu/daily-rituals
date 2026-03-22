@@ -34,14 +34,14 @@ function FilterButton({
       type="button"
       className={cn(
         'rounded-full px-3 py-1.5 text-xs font-medium transition-colors',
-        isSelected
-          ? 'text-white shadow-sm'
-          : 'bg-muted text-muted-foreground hover:bg-muted/80',
+        isSelected && !color && 'bg-primary text-primary-foreground shadow-sm',
+        isSelected && color && 'text-white shadow-sm',
+        !isSelected && 'bg-muted text-muted-foreground hover:bg-muted/80',
         isArchived && !isSelected && 'opacity-60',
       )}
       style={
-        isSelected
-          ? { backgroundColor: color ?? 'hsl(var(--primary))' }
+        isSelected && color
+          ? { backgroundColor: color }
           : undefined
       }
       onClick={onClick}
