@@ -59,6 +59,7 @@ function createMockHabitRepository(
     create: vi.fn().mockResolvedValue(makeHabit()),
     update: vi.fn().mockResolvedValue(null),
     archive: vi.fn().mockResolvedValue(undefined),
+    unarchive: vi.fn().mockResolvedValue(undefined),
     remove: vi.fn().mockResolvedValue(undefined),
     findArchived: vi.fn().mockResolvedValue([]),
     ...overrides,

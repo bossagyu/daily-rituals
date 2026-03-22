@@ -23,7 +23,7 @@ export type UseHabitListReturn = {
   readonly isLoading: boolean;
   readonly error: string | null;
   readonly refresh: () => Promise<void>;
-} & Pick<UseHabitsReturn, 'createHabit' | 'updateHabit' | 'archiveHabit'>;
+} & Pick<UseHabitsReturn, 'createHabit' | 'updateHabit' | 'archiveHabit' | 'unarchiveHabit'>;
 
 export function useHabitList(repository: HabitRepository): UseHabitListReturn {
   const habitsReturn = useHabits(repository);
@@ -79,5 +79,6 @@ export function useHabitList(repository: HabitRepository): UseHabitListReturn {
     createHabit: habitsReturn.createHabit,
     updateHabit: habitsReturn.updateHabit,
     archiveHabit: habitsReturn.archiveHabit,
+    unarchiveHabit: habitsReturn.unarchiveHabit,
   };
 }
