@@ -45,6 +45,7 @@ function createMockRepository(): Mocked<HabitRepository> {
     create: vi.fn().mockResolvedValue(SAMPLE_HABIT_1),
     update: vi.fn().mockResolvedValue(SAMPLE_HABIT_1),
     archive: vi.fn().mockResolvedValue(undefined),
+    remove: vi.fn().mockResolvedValue(undefined),
     findArchived: vi.fn().mockResolvedValue([]),
   };
 }
@@ -211,6 +212,27 @@ describe('HabitsManager', () => {
       await manager.archiveHabit('habit-1');
 
       expect(manager.getState().error).toBe('Archive failed');
+    });
+  });
+
+  describe('deleteHabit', () => {
+    it('should delete a habit and refresh the list', async () => {
+      mockRepo.findAll.mockResolvedValue([SAMPLE_HABIT_2]);
+
+      await manager.deleteHabit('habit-1');
+
+      expect(mockRepo.remove).toHaveBeenCalledWith('habit-1');
+      expect(mockRepo.findAll).toHaveBeenCalled();
+      expect(manager.getState().habits).toEqual([SAMPLE_HABIT_2]);
+    });
+
+    it('should set error when delete fails', async () => {
+      mockRepo.remove.mockRejectedValue(new Error('Delete failed'));
+
+      await manager.deleteHabit('habit-1');
+
+      expect(manager.getState().error).toBe('Delete failed');
+      expect(manager.getState().isLoading).toBe(false);
     });
   });
 

@@ -2,6 +2,7 @@
  * HabitDetailPage - Page for editing an existing habit.
  *
  * Loads existing habit data by ID, pre-fills the form, and updates on save.
+ * Includes archive and delete actions with confirmation dialogs.
  */
 
 import React, { useState, useCallback, useEffect } from 'react';
@@ -29,7 +30,7 @@ export function HabitDetailPage() {
   const navigate = useNavigate();
   const { user } = useAuthContext();
   const { habitRepository, pushSubscriptionRepository } = useRepositories();
-  const { updateHabit, archiveHabit } = useHabits(habitRepository);
+  const { updateHabit, archiveHabit, deleteHabit } = useHabits(habitRepository);
   const { permissionState, requestPermission, ensureSubscription } =
     usePushSubscription(pushSubscriptionRepository);
 
@@ -112,21 +113,49 @@ export function HabitDetailPage() {
     [user, id, updateHabit, ensureSubscription, navigate],
   );
 
-  const handleArchive = useCallback(async () => {
+  const handleArchive = useCallback(() => {
     if (!id) {
       return;
     }
-    try {
-      await archiveHabit(id);
-      navigate('/habits');
-    } catch (error: unknown) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : '習慣のアーカイブに失敗しました';
-      setSubmitError(message);
+    const confirmed = window.confirm('この習慣をアーカイブしますか？アーカイブした習慣は一覧から非表示になります。');
+    if (!confirmed) {
+      return;
     }
+    void (async () => {
+      try {
+        await archiveHabit(id);
+        navigate('/habits');
+      } catch (error: unknown) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : '習慣のアーカイブに失敗しました';
+        setSubmitError(message);
+      }
+    })();
   }, [id, archiveHabit, navigate]);
+
+  const handleDelete = useCallback(() => {
+    if (!id) {
+      return;
+    }
+    const confirmed = window.confirm('この習慣を完全に削除しますか？関連するすべての記録も削除され、元に戻せません。');
+    if (!confirmed) {
+      return;
+    }
+    void (async () => {
+      try {
+        await deleteHabit(id);
+        navigate('/habits');
+      } catch (error: unknown) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : '習慣の削除に失敗しました';
+        setSubmitError(message);
+      }
+    })();
+  }, [id, deleteHabit, navigate]);
 
   if (isLoadingHabit) {
     return (
@@ -158,14 +187,7 @@ export function HabitDetailPage() {
 
   return (
     <div className="mx-auto max-w-lg p-6">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">習慣の編集</h1>
-        {habit.archivedAt === null && (
-          <Button variant="destructive" size="sm" onClick={handleArchive}>
-            アーカイブ
-          </Button>
-        )}
-      </div>
+      <h1 className="mb-6 text-2xl font-bold text-foreground">習慣の編集</h1>
 
       {submitError && (
         <div
@@ -193,6 +215,25 @@ export function HabitDetailPage() {
         permissionState={permissionState}
         onRequestPermission={requestPermission}
       />
+
+      {habit.archivedAt === null && (
+        <div className="mt-8 space-y-3 border-t pt-6">
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={handleArchive}
+          >
+            アーカイブ
+          </Button>
+          <Button
+            variant="destructive"
+            className="w-full"
+            onClick={handleDelete}
+          >
+            削除
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

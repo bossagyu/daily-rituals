@@ -28,6 +28,7 @@ const DEFAULT_ERROR_MESSAGE = 'Failed to load habits';
 const CREATE_ERROR_MESSAGE = 'Failed to create habit';
 const UPDATE_ERROR_MESSAGE = 'Failed to update habit';
 const ARCHIVE_ERROR_MESSAGE = 'Failed to archive habit';
+const DELETE_ERROR_MESSAGE = 'Failed to delete habit';
 
 // --- Utility ---
 
@@ -120,6 +121,20 @@ export class HabitsManager {
       this.setState({
         isLoading: false,
         error: extractErrorMessage(error, ARCHIVE_ERROR_MESSAGE),
+      });
+    }
+  }
+
+  async deleteHabit(id: string): Promise<void> {
+    this.setState({ isLoading: true, error: null });
+    try {
+      await this.repository.remove(id);
+      const habits = await this.repository.findAll();
+      this.setState({ habits, isLoading: false });
+    } catch (error: unknown) {
+      this.setState({
+        isLoading: false,
+        error: extractErrorMessage(error, DELETE_ERROR_MESSAGE),
       });
     }
   }
