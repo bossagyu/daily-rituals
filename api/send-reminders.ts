@@ -20,7 +20,7 @@ const MAX_DISPLAY_HABITS = 3;
 
 // --- Types ---
 
-type HabitRow = {
+export type HabitRow = {
   readonly id: string;
   readonly user_id: string;
   readonly name: string;
@@ -63,7 +63,7 @@ function getCurrentDayOfWeek(): number {
   return new Date().getUTCDay();
 }
 
-function buildNotificationBody(habitNames: readonly string[]): string {
+export function buildNotificationBody(habitNames: readonly string[]): string {
   if (habitNames.length === 0) {
     return '';
   }
@@ -76,7 +76,7 @@ function buildNotificationBody(habitNames: readonly string[]): string {
   return `${displayed}${suffix}がまだ完了していません`;
 }
 
-function isWeeklyCountMet(
+export function isWeeklyCountMet(
   habit: HabitRow,
   weeklyCompletionCount: number,
 ): boolean {
@@ -85,7 +85,7 @@ function isWeeklyCountMet(
   return weeklyCompletionCount >= requiredCount;
 }
 
-function isScheduledToday(habit: HabitRow, dayOfWeek: number): boolean {
+export function isScheduledToday(habit: HabitRow, dayOfWeek: number): boolean {
   if (habit.frequency_type !== 'weekly_days') {
     return true;
   }
@@ -185,15 +185,18 @@ async function sendNotificationsPerUser(
         totalSent = totalSent + 1;
         userSendSucceeded = true;
       } catch (error: unknown) {
-        if (
-          error instanceof Error &&
-          'statusCode' in error &&
-          (error as { statusCode: number }).statusCode === HTTP_GONE
-        ) {
+        const statusCode =
+          error instanceof Error && 'statusCode' in error
+            ? (error as { statusCode: number }).statusCode
+            : undefined;
+
+        if (statusCode === HTTP_GONE) {
           await supabase
             .from('push_subscriptions')
             .delete()
             .eq('endpoint', sub.endpoint);
+        } else {
+          console.error('Failed to send push notification:', sub.endpoint, error);
         }
       }
     }
