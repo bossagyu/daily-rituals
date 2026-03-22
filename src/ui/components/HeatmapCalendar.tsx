@@ -32,9 +32,9 @@ const DAY_HEADERS = ['日', '月', '火', '水', '木', '金', '土'] as const;
 const HEATMAP_CLASSES: Record<HeatmapLevel, string> = {
   0: 'bg-muted text-muted-foreground',
   1: 'bg-primary/20 text-foreground',
-  2: 'bg-primary/50 text-primary-foreground',
-  3: 'bg-primary/75 text-primary-foreground',
-  4: 'bg-primary text-primary-foreground',
+  2: 'bg-primary/50 text-white',
+  3: 'bg-primary/75 text-white',
+  4: 'bg-primary text-white',
 };
 
 // --- Utilities ---
