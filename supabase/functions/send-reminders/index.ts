@@ -57,13 +57,17 @@ function getCurrentDayOfWeek(): number {
   return new Date().getUTCDay();
 }
 
-Deno.serve(async (_req: Request) => {
-  // Auth is handled by Supabase Edge Runtime's built-in JWT verification.
-  // Only valid JWT tokens (anon_key, service_role_key) can reach this function.
+Deno.serve(async (req: Request) => {
+  // Deployed with --no-verify-jwt to bypass Edge Runtime JWT issues with pg_cron.
+  // Custom auth check ensures only service_role_key bearers can invoke this function.
+  const authHeader = req.headers.get('Authorization');
+  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  if (!serviceRoleKey || authHeader !== `Bearer ${serviceRoleKey}`) {
+    return new Response('Unauthorized', { status: 401 });
+  }
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL');
-  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-  if (!supabaseUrl || !serviceRoleKey) {
+  if (!supabaseUrl) {
     return new Response('Missing environment configuration', { status: 500 });
   }
 
