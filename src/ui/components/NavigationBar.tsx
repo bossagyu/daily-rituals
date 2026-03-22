@@ -8,7 +8,7 @@
 
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { CalendarDays, ListTodo, LogOut } from 'lucide-react';
+import { CalendarDays, CalendarRange, ListTodo, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
@@ -27,6 +27,11 @@ const NAV_ITEMS: readonly NavItemConfig[] = [
     to: '/',
     label: 'Today',
     icon: <CalendarDays className="size-5" />,
+  },
+  {
+    to: '/calendar',
+    label: 'カレンダー',
+    icon: <CalendarRange className="size-5" />,
   },
   {
     to: '/habits',

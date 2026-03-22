@@ -27,6 +27,7 @@ const createMockRepository = (
   findByHabitId: vi.fn().mockResolvedValue([]),
   findByDate: vi.fn().mockResolvedValue([]),
   findByHabitIdAndDateRange: vi.fn().mockResolvedValue([]),
+  findByDateRange: vi.fn().mockResolvedValue([]),
   create: vi.fn().mockResolvedValue(makeCompletion('h1', '2025-03-10')),
   delete: vi.fn().mockResolvedValue(undefined),
   ...overrides,
