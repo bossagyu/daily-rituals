@@ -84,6 +84,25 @@ export const createSupabaseCompletionRepository = (
     return (data ?? []).map(toDomainCompletion);
   },
 
+  async findByDateRange(
+    startDate: string,
+    endDate: string,
+  ): Promise<Completion[]> {
+    const { data, error } = await client
+      .from('completions')
+      .select()
+      .gte('completed_date', startDate)
+      .lte('completed_date', endDate);
+
+    if (error) {
+      throw new Error(
+        `Failed to fetch completions by date range: ${error.message}`,
+      );
+    }
+
+    return (data ?? []).map(toDomainCompletion);
+  },
+
   async create(
     habitId: string,
     completedDate: string,

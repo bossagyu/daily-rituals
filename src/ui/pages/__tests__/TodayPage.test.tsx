@@ -73,6 +73,7 @@ function createMockCompletionRepository(
     findByHabitId: vi.fn().mockResolvedValue([]),
     findByDate: vi.fn().mockResolvedValue([]),
     findByHabitIdAndDateRange: vi.fn().mockResolvedValue([]),
+    findByDateRange: vi.fn().mockResolvedValue([]),
     create: vi.fn().mockImplementation((habitId: string, date: string) =>
       Promise.resolve(makeCompletion(habitId, date)),
     ),
