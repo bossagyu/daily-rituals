@@ -216,8 +216,8 @@ export function HabitDetailPage() {
         onRequestPermission={requestPermission}
       />
 
-      {habit.archivedAt === null && (
-        <div className="mt-8 space-y-3 border-t pt-6">
+      <div className="mt-8 space-y-3 border-t pt-6">
+        {habit.archivedAt === null && (
           <Button
             variant="outline"
             className="w-full"
@@ -225,15 +225,15 @@ export function HabitDetailPage() {
           >
             アーカイブ
           </Button>
-          <Button
-            variant="destructive"
-            className="w-full"
-            onClick={handleDelete}
-          >
-            削除
-          </Button>
-        </div>
-      )}
+        )}
+        <Button
+          variant="destructive"
+          className="w-full"
+          onClick={handleDelete}
+        >
+          削除
+        </Button>
+      </div>
     </div>
   );
 }
