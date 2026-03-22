@@ -1,4 +1,4 @@
-import { isDueToday, getWeeklyProgress } from '../frequencyService';
+import { isDueOnDate, getWeeklyProgress } from '../frequencyService';
 import type { Habit, Completion } from '../../models';
 
 const BASE_HABIT: Habit = {
@@ -27,20 +27,20 @@ function makeCompletion(habitId: string, completedDate: string): Completion {
   };
 }
 
-describe('isDueToday', () => {
+describe('isDueOnDate', () => {
   describe('daily frequency', () => {
     const habit = makeHabit({ frequency: { type: 'daily' } });
 
     it('returns true for any weekday', () => {
       // Monday
-      expect(isDueToday(habit, new Date('2026-03-09'))).toBe(true);
+      expect(isDueOnDate(habit, new Date('2026-03-09'))).toBe(true);
     });
 
     it('returns true for any weekend', () => {
       // Saturday
-      expect(isDueToday(habit, new Date('2026-03-14'))).toBe(true);
+      expect(isDueOnDate(habit, new Date('2026-03-14'))).toBe(true);
       // Sunday
-      expect(isDueToday(habit, new Date('2026-03-15'))).toBe(true);
+      expect(isDueOnDate(habit, new Date('2026-03-15'))).toBe(true);
     });
   });
 
@@ -52,22 +52,22 @@ describe('isDueToday', () => {
 
     it('returns true when today is one of the specified days', () => {
       // 2026-03-09 is Monday (day 1)
-      expect(isDueToday(habit, new Date('2026-03-09'))).toBe(true);
+      expect(isDueOnDate(habit, new Date('2026-03-09'))).toBe(true);
       // 2026-03-11 is Wednesday (day 3)
-      expect(isDueToday(habit, new Date('2026-03-11'))).toBe(true);
+      expect(isDueOnDate(habit, new Date('2026-03-11'))).toBe(true);
       // 2026-03-13 is Friday (day 5)
-      expect(isDueToday(habit, new Date('2026-03-13'))).toBe(true);
+      expect(isDueOnDate(habit, new Date('2026-03-13'))).toBe(true);
     });
 
     it('returns false when today is not one of the specified days', () => {
       // 2026-03-10 is Tuesday (day 2)
-      expect(isDueToday(habit, new Date('2026-03-10'))).toBe(false);
+      expect(isDueOnDate(habit, new Date('2026-03-10'))).toBe(false);
       // 2026-03-12 is Thursday (day 4)
-      expect(isDueToday(habit, new Date('2026-03-12'))).toBe(false);
+      expect(isDueOnDate(habit, new Date('2026-03-12'))).toBe(false);
       // 2026-03-14 is Saturday (day 6)
-      expect(isDueToday(habit, new Date('2026-03-14'))).toBe(false);
+      expect(isDueOnDate(habit, new Date('2026-03-14'))).toBe(false);
       // 2026-03-15 is Sunday (day 0)
-      expect(isDueToday(habit, new Date('2026-03-15'))).toBe(false);
+      expect(isDueOnDate(habit, new Date('2026-03-15'))).toBe(false);
     });
 
     it('handles Sunday (day 0) as a specified day', () => {
@@ -75,25 +75,25 @@ describe('isDueToday', () => {
         frequency: { type: 'weekly_days', days: [0] },
       });
       // 2026-03-15 is Sunday
-      expect(isDueToday(sundayHabit, new Date('2026-03-15'))).toBe(true);
+      expect(isDueOnDate(sundayHabit, new Date('2026-03-15'))).toBe(true);
       // 2026-03-09 is Monday
-      expect(isDueToday(sundayHabit, new Date('2026-03-09'))).toBe(false);
+      expect(isDueOnDate(sundayHabit, new Date('2026-03-09'))).toBe(false);
     });
 
     it('handles all days specified', () => {
       const everydayHabit = makeHabit({
         frequency: { type: 'weekly_days', days: [0, 1, 2, 3, 4, 5, 6] },
       });
-      expect(isDueToday(everydayHabit, new Date('2026-03-09'))).toBe(true);
-      expect(isDueToday(everydayHabit, new Date('2026-03-15'))).toBe(true);
+      expect(isDueOnDate(everydayHabit, new Date('2026-03-09'))).toBe(true);
+      expect(isDueOnDate(everydayHabit, new Date('2026-03-15'))).toBe(true);
     });
 
     it('handles single day specified', () => {
       const wednesdayOnly = makeHabit({
         frequency: { type: 'weekly_days', days: [3] },
       });
-      expect(isDueToday(wednesdayOnly, new Date('2026-03-11'))).toBe(true);
-      expect(isDueToday(wednesdayOnly, new Date('2026-03-10'))).toBe(false);
+      expect(isDueOnDate(wednesdayOnly, new Date('2026-03-11'))).toBe(true);
+      expect(isDueOnDate(wednesdayOnly, new Date('2026-03-10'))).toBe(false);
     });
   });
 
@@ -103,9 +103,9 @@ describe('isDueToday', () => {
     });
 
     it('returns true for any day (user can do it any day)', () => {
-      expect(isDueToday(habit, new Date('2026-03-09'))).toBe(true);
-      expect(isDueToday(habit, new Date('2026-03-14'))).toBe(true);
-      expect(isDueToday(habit, new Date('2026-03-15'))).toBe(true);
+      expect(isDueOnDate(habit, new Date('2026-03-09'))).toBe(true);
+      expect(isDueOnDate(habit, new Date('2026-03-14'))).toBe(true);
+      expect(isDueOnDate(habit, new Date('2026-03-15'))).toBe(true);
     });
   });
 });

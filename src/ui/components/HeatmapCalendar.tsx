@@ -7,6 +7,7 @@
  */
 
 import React, { useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Popover,
   PopoverContent,
@@ -14,6 +15,7 @@ import {
 } from '@/components/ui/popover';
 import type { CalendarDay, DayAchievement, HeatmapLevel } from '@/domain/services/calendarService';
 import { getHeatmapLevel } from '@/domain/services/calendarService';
+import { getTodayString } from '@/lib/dateUtils';
 import { cn } from '@/lib/utils';
 
 // --- Types ---
@@ -38,11 +40,6 @@ const HEATMAP_CLASSES: Record<HeatmapLevel, string> = {
 };
 
 // --- Utilities ---
-
-function getTodayString(): string {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-}
 
 function isFutureDate(dateStr: string, today: string): boolean {
   return dateStr > today;
@@ -106,6 +103,12 @@ function PopoverContentAll({
       <p className="mt-1 text-[10px] text-muted-foreground">
         {achievement.completedCount}/{achievement.targetCount} 完了
       </p>
+      <Link
+        to={`/?date=${dateStr}`}
+        className="mt-2 block text-xs text-primary hover:underline"
+      >
+        この日を表示 →
+      </Link>
     </>
   );
 }
@@ -125,6 +128,12 @@ function PopoverContentHabit({
       <p className="text-sm font-medium">
         {achievement.completedCount > 0 ? '完了' : '未完了'}
       </p>
+      <Link
+        to={`/?date=${dateStr}`}
+        className="mt-2 block text-xs text-primary hover:underline"
+      >
+        この日を表示 →
+      </Link>
     </>
   );
 }

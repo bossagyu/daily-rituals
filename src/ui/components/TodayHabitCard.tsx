@@ -19,6 +19,7 @@ export type TodayHabitCardProps = {
   readonly streak: Streak;
   readonly weeklyProgress: WeeklyProgress;
   readonly onToggle: () => void;
+  readonly disabled?: boolean;
 };
 
 export function TodayHabitCard({
@@ -27,6 +28,7 @@ export function TodayHabitCard({
   streak,
   weeklyProgress,
   onToggle,
+  disabled = false,
 }: TodayHabitCardProps) {
   return (
     <div
@@ -34,7 +36,7 @@ export function TodayHabitCard({
         isCompleted
           ? 'border-emerald-500/20 bg-emerald-500/5'
           : 'border-border bg-card hover:border-primary/20'
-      }`}
+      }${disabled ? ' opacity-60' : ''}`}
     >
       <div
         className="h-4 w-4 shrink-0 rounded-full"
@@ -44,7 +46,8 @@ export function TodayHabitCard({
 
       <Checkbox
         checked={isCompleted}
-        onCheckedChange={onToggle}
+        onCheckedChange={disabled ? undefined : onToggle}
+        disabled={disabled}
         aria-label={`${habit.name}を${isCompleted ? '未完了に' : '完了に'}する`}
       />
 

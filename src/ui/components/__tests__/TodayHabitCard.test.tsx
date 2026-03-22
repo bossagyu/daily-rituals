@@ -3,7 +3,7 @@
  */
 
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import { TodayHabitCard } from '../TodayHabitCard';
 import type { Habit } from '@/domain/models/habit';
@@ -51,5 +51,36 @@ describe('TodayHabitCard', () => {
       <TodayHabitCard habit={habitWithReminder} {...defaultProps} />,
     );
     expect(screen.getByText(/通知/)).toBeInTheDocument();
+  });
+
+  it('disables checkbox when disabled is true', () => {
+    render(
+      <TodayHabitCard habit={baseHabit} {...defaultProps} disabled={true} />,
+    );
+    const checkbox = screen.getByRole('checkbox');
+    expect(checkbox).toBeDisabled();
+  });
+
+  it('applies opacity-60 when disabled', () => {
+    const { container } = render(
+      <TodayHabitCard habit={baseHabit} {...defaultProps} disabled />,
+    );
+    const card = container.firstChild as HTMLElement;
+    expect(card.className).toContain('opacity-60');
+  });
+
+  it('does not call onToggle when disabled and checkbox is clicked', () => {
+    const onToggle = vi.fn();
+    render(
+      <TodayHabitCard
+        habit={baseHabit}
+        {...defaultProps}
+        onToggle={onToggle}
+        disabled={true}
+      />,
+    );
+    const checkbox = screen.getByRole('checkbox');
+    fireEvent.click(checkbox);
+    expect(onToggle).not.toHaveBeenCalled();
   });
 });

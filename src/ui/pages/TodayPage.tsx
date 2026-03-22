@@ -1,38 +1,31 @@
 /**
- * TodayPage - Main screen for daily habit tracking.
+ * TodayPage - Main screen for daily habit tracking with date navigation.
  *
- * Displays today's date, the list of habits due today,
- * completion checkboxes, streak counts, and weekly progress.
- * Uses hooks for data access and domain services for business logic.
+ * Displays the selected date's habits, completion checkboxes,
+ * streak counts, and weekly progress. Supports navigating to past dates
+ * via URL search params (?date=YYYY-MM-DD).
  */
 
 import React, { useMemo, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useRepositories } from '@/hooks/useRepositories';
 import { useAuthContext } from '@/hooks/useAuthContext';
 import { useHabits } from '@/hooks/useHabits';
 import { useCompletions } from '@/hooks/useCompletions';
 import { useStreak } from '@/hooks/useStreak';
-import { isDueToday } from '@/domain/services/frequencyService';
+import { isDueOnDate } from '@/domain/services/frequencyService';
 import { TodayHabitCard } from '@/ui/components/TodayHabitCard';
+import { Button } from '@/components/ui/button';
+import {
+  parseDateParam,
+  formatDisplayDate,
+  addDays,
+  isToday,
+  isFutureDate,
+  getTodayString,
+} from '@/lib/dateUtils';
 import type { Habit } from '@/domain/models';
-
-// --- Date Utilities ---
-
-function getTodayString(): string {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
-function formatDisplayDate(dateStr: string): string {
-  const [year, month, day] = dateStr.split('-').map(Number);
-  const date = new Date(year, month - 1, day);
-  const weekDays = ['日', '月', '火', '水', '木', '金', '土'];
-  const weekDay = weekDays[date.getDay()];
-  return `${year}年${month}月${day}日 (${weekDay})`;
-}
 
 // --- State Components ---
 
@@ -75,15 +68,63 @@ function ErrorState({
   );
 }
 
-function EmptyState() {
+function EmptyState({
+  selectedDate,
+}: {
+  readonly selectedDate: string;
+}) {
+  const message = useMemo(() => {
+    if (isToday(selectedDate)) {
+      return '今日やるべき習慣はありません';
+    }
+    if (isFutureDate(selectedDate)) {
+      return 'この日にやるべき習慣はありません';
+    }
+    return 'この日にやるべき習慣はありませんでした';
+  }, [selectedDate]);
+
   return (
     <div className="flex flex-col items-center justify-center py-16">
-      <p className="text-lg font-medium text-foreground">
-        今日やるべき習慣はありません
-      </p>
+      <p className="text-lg font-medium text-foreground">{message}</p>
       <p className="mt-2 text-sm text-muted-foreground">
         新しい習慣を追加して、毎日のルーティンを始めましょう。
       </p>
+    </div>
+  );
+}
+
+// --- Date Navigation ---
+
+function DateNavigationHeader({
+  displayDate,
+  onPrevious,
+  onNext,
+}: {
+  readonly displayDate: string;
+  readonly onPrevious: () => void;
+  readonly onNext: () => void;
+}) {
+  return (
+    <div className="mb-4 flex items-center justify-between">
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={onPrevious}
+        aria-label="前の日"
+      >
+        <ChevronLeft className="size-5" />
+      </Button>
+      <span className="text-sm font-medium text-muted-foreground">
+        {displayDate}
+      </span>
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={onNext}
+        aria-label="次の日"
+      >
+        <ChevronRight className="size-5" />
+      </Button>
     </div>
   );
 }
@@ -92,29 +133,31 @@ function EmptyState() {
 
 type HabitListProps = {
   readonly habits: readonly Habit[];
-  readonly today: string;
+  readonly selectedDate: string;
   readonly isCompleted: (habitId: string, date: string) => boolean;
   readonly toggleCompletion: (habitId: string, date: string) => Promise<void>;
   readonly getStreak: (habitId: string) => { readonly current: number; readonly longest: number };
   readonly getWeeklyProgress: (habitId: string) => { readonly done: number; readonly target: number };
   readonly onStreakRefresh: (habitId: string) => Promise<void>;
+  readonly disabled: boolean;
 };
 
 function HabitList({
   habits,
-  today,
+  selectedDate,
   isCompleted,
   toggleCompletion,
   getStreak,
   getWeeklyProgress,
   onStreakRefresh,
+  disabled,
 }: HabitListProps) {
   const handleToggle = useCallback(
     async (habitId: string) => {
-      await toggleCompletion(habitId, today);
+      await toggleCompletion(habitId, selectedDate);
       await onStreakRefresh(habitId);
     },
-    [toggleCompletion, today, onStreakRefresh],
+    [toggleCompletion, selectedDate, onStreakRefresh],
   );
 
   return (
@@ -123,10 +166,11 @@ function HabitList({
         <TodayHabitCard
           key={habit.id}
           habit={habit}
-          isCompleted={isCompleted(habit.id, today)}
+          isCompleted={isCompleted(habit.id, selectedDate)}
           streak={getStreak(habit.id)}
           weeklyProgress={getWeeklyProgress(habit.id)}
           onToggle={() => void handleToggle(habit.id)}
+          disabled={disabled}
         />
       ))}
     </div>
@@ -138,9 +182,11 @@ function HabitList({
 function ProgressSummary({
   completed,
   total,
+  displayDate,
 }: {
   readonly completed: number;
   readonly total: number;
+  readonly displayDate: string;
 }) {
   const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
 
@@ -152,7 +198,7 @@ function ProgressSummary({
         aria-valuenow={completed}
         aria-valuemin={0}
         aria-valuemax={total}
-        aria-label={`今日の進捗: ${completed}/${total}`}
+        aria-label={`${displayDate}の進捗: ${completed}/${total}`}
       >
         <div
           className="h-full rounded-full bg-primary transition-all"
@@ -169,27 +215,45 @@ function ProgressSummary({
 // --- Main Page ---
 
 export function TodayPage() {
-  const today = useMemo(() => getTodayString(), []);
-  const displayDate = useMemo(() => formatDisplayDate(today), [today]);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const selectedDate = useMemo(() => parseDateParam(searchParams.get('date')), [searchParams]);
+  const todayStr = useMemo(() => getTodayString(), []);
+  const isSelectedToday = isToday(selectedDate);
+  const isSelectedFuture = isFutureDate(selectedDate);
+  const displayDate = useMemo(() => formatDisplayDate(selectedDate), [selectedDate]);
+
+  const goToPreviousDay = useCallback(() => {
+    const prev = addDays(selectedDate, -1);
+    setSearchParams({ date: prev }, { replace: true });
+  }, [selectedDate, setSearchParams]);
+
+  const goToNextDay = useCallback(() => {
+    const next = addDays(selectedDate, 1);
+    setSearchParams({ date: next }, { replace: true });
+  }, [selectedDate, setSearchParams]);
+
+  const goToToday = useCallback(() => {
+    setSearchParams({}, { replace: true });
+  }, [setSearchParams]);
 
   const { refreshSession } = useAuthContext();
   const { habitRepository, completionRepository } = useRepositories();
   const { habits, isLoading: habitsLoading, error: habitsError, refresh: refreshHabits } = useHabits(habitRepository);
-  const { isCompleted, toggleCompletion, loading: completionsLoading, error: completionsError, refreshCompletions } = useCompletions(completionRepository, today, refreshSession);
-  const { getStreak, getWeeklyProgress, refreshStreak } = useStreak(completionRepository, habits, today);
+  const { isCompleted, toggleCompletion, loading: completionsLoading, error: completionsError, refreshCompletions } = useCompletions(completionRepository, selectedDate, refreshSession);
+  const { getStreak, getWeeklyProgress, refreshStreak } = useStreak(completionRepository, habits, todayStr);
 
-  const todaysHabits = useMemo(() => {
-    const todayDate = new Date(
-      Number(today.slice(0, 4)),
-      Number(today.slice(5, 7)) - 1,
-      Number(today.slice(8, 10)),
+  const dueHabits = useMemo(() => {
+    const selectedDateObj = new Date(
+      Number(selectedDate.slice(0, 4)),
+      Number(selectedDate.slice(5, 7)) - 1,
+      Number(selectedDate.slice(8, 10)),
     );
-    return habits.filter((habit) => isDueToday(habit, todayDate));
-  }, [habits, today]);
+    return habits.filter((habit) => isDueOnDate(habit, selectedDateObj));
+  }, [habits, selectedDate]);
 
   const sortedHabits = useMemo(() => {
-    const incomplete = todaysHabits.filter((h) => !isCompleted(h.id, today));
-    const completed = todaysHabits.filter((h) => isCompleted(h.id, today));
+    const incomplete = dueHabits.filter((h) => !isCompleted(h.id, selectedDate));
+    const completed = dueHabits.filter((h) => isCompleted(h.id, selectedDate));
 
     const sortedIncomplete = [...incomplete].sort((a, b) => {
       if (a.reminderTime && b.reminderTime) {
@@ -201,11 +265,11 @@ export function TodayPage() {
     });
 
     return [...sortedIncomplete, ...completed];
-  }, [todaysHabits, isCompleted, today]);
+  }, [dueHabits, isCompleted, selectedDate]);
 
   const completedCount = useMemo(
-    () => todaysHabits.filter((h) => isCompleted(h.id, today)).length,
-    [todaysHabits, isCompleted, today],
+    () => dueHabits.filter((h) => isCompleted(h.id, selectedDate)).length,
+    [dueHabits, isCompleted, selectedDate],
   );
 
   const isLoading = habitsLoading || completionsLoading;
@@ -216,47 +280,58 @@ export function TodayPage() {
     void refreshCompletions();
   }, [refreshHabits, refreshCompletions]);
 
-  if (isLoading) {
-    return (
-      <div className="mx-auto w-full max-w-2xl px-4 py-6">
-        <LoadingState />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="mx-auto w-full max-w-2xl px-4 py-6">
-        <ErrorState message={error} onRetry={handleRetry} />
-      </div>
-    );
-  }
+  const pageTitle = isSelectedToday
+    ? 'Today'
+    : formatDisplayDate(selectedDate).split(' ')[0];
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-6">
       <header className="mb-6">
-        <h1 className="text-2xl font-bold text-foreground">Today</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{displayDate}</p>
+        <h1 className="text-2xl font-bold text-foreground">{pageTitle}</h1>
       </header>
 
-      {todaysHabits.length === 0 ? (
-        <EmptyState />
+      <DateNavigationHeader
+        displayDate={displayDate}
+        onPrevious={goToPreviousDay}
+        onNext={goToNextDay}
+      />
+
+      {!isSelectedToday && (
+        <div className="mb-4 flex justify-center">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={goToToday}
+          >
+            今日に戻る
+          </Button>
+        </div>
+      )}
+
+      {error && <ErrorState message={error} onRetry={handleRetry} />}
+
+      {isLoading ? (
+        <LoadingState />
+      ) : dueHabits.length === 0 ? (
+        <EmptyState selectedDate={selectedDate} />
       ) : (
         <>
           <div className="mb-4">
             <ProgressSummary
               completed={completedCount}
-              total={todaysHabits.length}
+              total={dueHabits.length}
+              displayDate={displayDate}
             />
           </div>
           <HabitList
             habits={sortedHabits}
-            today={today}
+            selectedDate={selectedDate}
             isCompleted={isCompleted}
             toggleCompletion={toggleCompletion}
             getStreak={getStreak}
             getWeeklyProgress={getWeeklyProgress}
             onStreakRefresh={refreshStreak}
+            disabled={isSelectedFuture}
           />
         </>
       )}

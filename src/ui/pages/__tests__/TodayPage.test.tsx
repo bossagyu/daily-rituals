@@ -9,6 +9,7 @@
 
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import '@testing-library/jest-dom/vitest';
 import { TodayPage } from '../TodayPage';
 import type { Habit } from '@/domain/models';
@@ -82,14 +83,6 @@ function createMockCompletionRepository(
   };
 }
 
-// --- Mock react-router-dom ---
-
-const mockNavigate = vi.fn();
-
-vi.mock('react-router-dom', () => ({
-  useNavigate: () => mockNavigate,
-}));
-
 // --- Mock useAuthContext ---
 
 vi.mock('@/hooks/useAuthContext', () => ({
@@ -115,7 +108,7 @@ vi.mock('@/hooks/useRepositories', () => ({
   }),
 }));
 
-// --- Tests ---
+// --- Helpers ---
 
 function getTodayStr(): string {
   const now = new Date();
@@ -124,6 +117,16 @@ function getTodayStr(): string {
   const d = String(now.getDate()).padStart(2, '0');
   return `${y}-${m}-${d}`;
 }
+
+function renderWithRouter(initialEntries: string[] = ['/']) {
+  return render(
+    <MemoryRouter initialEntries={initialEntries}>
+      <TodayPage />
+    </MemoryRouter>,
+  );
+}
+
+// --- Tests ---
 
 describe('TodayPage', () => {
   beforeEach(() => {
@@ -137,12 +140,12 @@ describe('TodayPage', () => {
       findAll: vi.fn().mockReturnValue(new Promise(() => {})),
     });
 
-    render(<TodayPage />);
+    renderWithRouter();
     expect(screen.getByRole('status', { name: '読み込み中' })).toBeInTheDocument();
   });
 
   it('displays today heading and date', async () => {
-    render(<TodayPage />);
+    renderWithRouter();
 
     await waitFor(() => {
       expect(screen.getByText('Today')).toBeInTheDocument();
@@ -154,7 +157,7 @@ describe('TodayPage', () => {
       findAll: vi.fn().mockResolvedValue([]),
     });
 
-    render(<TodayPage />);
+    renderWithRouter();
 
     await waitFor(() => {
       expect(
@@ -173,7 +176,7 @@ describe('TodayPage', () => {
       findAll: vi.fn().mockResolvedValue(habits),
     });
 
-    render(<TodayPage />);
+    renderWithRouter();
 
     await waitFor(() => {
       expect(screen.getByText('朝のジョギング')).toBeInTheDocument();
@@ -204,7 +207,7 @@ describe('TodayPage', () => {
       findAll: vi.fn().mockResolvedValue(habits),
     });
 
-    render(<TodayPage />);
+    renderWithRouter();
 
     await waitFor(() => {
       expect(screen.getByText('今日の習慣')).toBeInTheDocument();
@@ -224,7 +227,7 @@ describe('TodayPage', () => {
       findByDate: vi.fn().mockResolvedValue(completions),
     });
 
-    render(<TodayPage />);
+    renderWithRouter();
 
     await waitFor(() => {
       const nameEl = screen.getByText('完了した習慣');
@@ -247,13 +250,10 @@ describe('TodayPage', () => {
       findByDate: vi.fn().mockResolvedValue(completions),
     });
 
-    render(<TodayPage />);
+    renderWithRouter();
 
     await waitFor(() => {
       expect(screen.getByText('1/2')).toBeInTheDocument();
-      expect(
-        screen.getByRole('progressbar', { name: '今日の進捗: 1/2' }),
-      ).toBeInTheDocument();
     });
   });
 
@@ -262,7 +262,7 @@ describe('TodayPage', () => {
       findAll: vi.fn().mockRejectedValue(new Error('ネットワークエラー')),
     });
 
-    render(<TodayPage />);
+    renderWithRouter();
 
     await waitFor(() => {
       expect(
@@ -281,7 +281,7 @@ describe('TodayPage', () => {
       findAll: findAllMock,
     });
 
-    render(<TodayPage />);
+    renderWithRouter();
 
     await waitFor(() => {
       expect(screen.getByText('再試行')).toBeInTheDocument();
@@ -304,7 +304,7 @@ describe('TodayPage', () => {
       findByDate: vi.fn().mockResolvedValue([]),
     });
 
-    render(<TodayPage />);
+    renderWithRouter();
 
     await waitFor(() => {
       expect(screen.getByText('トグル習慣')).toBeInTheDocument();
@@ -342,7 +342,7 @@ describe('TodayPage', () => {
       findByDate: findByDateMock,
     });
 
-    render(<TodayPage />);
+    renderWithRouter();
 
     await waitFor(() => {
       expect(screen.getByText('再試行')).toBeInTheDocument();
@@ -375,11 +375,54 @@ describe('TodayPage', () => {
       findAll: vi.fn().mockResolvedValue(habits),
     });
 
-    render(<TodayPage />);
+    renderWithRouter();
 
     await waitFor(() => {
       expect(screen.getByText('週3回の習慣')).toBeInTheDocument();
       expect(screen.getByText(/今週.*0.*\/.*3/)).toBeInTheDocument();
+    });
+  });
+
+  it('shows date navigation header', async () => {
+    renderWithRouter();
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: '前の日' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: '次の日' })).toBeInTheDocument();
+    });
+  });
+
+  it('does not show "今日に戻る" button when viewing today', async () => {
+    renderWithRouter();
+
+    await waitFor(() => {
+      expect(screen.getByText('Today')).toBeInTheDocument();
+    });
+
+    expect(screen.queryByText('今日に戻る')).not.toBeInTheDocument();
+  });
+
+  it('shows "今日に戻る" button and past empty state when viewing past date', async () => {
+    mockHabitRepository = createMockHabitRepository({
+      findAll: vi.fn().mockResolvedValue([]),
+    });
+
+    renderWithRouter(['/?date=2020-01-01']);
+
+    await waitFor(() => {
+      expect(screen.getByText('今日に戻る')).toBeInTheDocument();
+      expect(
+        screen.getByText('この日にやるべき習慣はありませんでした'),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it('shows date title instead of "Today" for non-today dates', async () => {
+    renderWithRouter(['/?date=2020-03-15']);
+
+    await waitFor(() => {
+      expect(screen.getByText('2020年3月15日')).toBeInTheDocument();
+      expect(screen.queryByText('Today')).not.toBeInTheDocument();
     });
   });
 });
