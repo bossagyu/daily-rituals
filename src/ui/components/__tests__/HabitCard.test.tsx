@@ -132,4 +132,26 @@ describe('HabitCard', () => {
     const colorDot = container.querySelector('[aria-hidden="true"]');
     expect(colorDot).toHaveStyle({ backgroundColor: '#4CAF50' });
   });
+
+  it('does not show reminder time when reminderTime is null', () => {
+    render(
+      <MemoryRouter>
+        <HabitCard habit={activeHabit} isArchived={false} />
+      </MemoryRouter>,
+    );
+    expect(screen.queryByText(/🔔/)).not.toBeInTheDocument();
+  });
+
+  it('shows reminder time when reminderTime is set', () => {
+    const habitWithReminder: Habit = {
+      ...activeHabit,
+      reminderTime: '09:00:00',
+    };
+    render(
+      <MemoryRouter>
+        <HabitCard habit={habitWithReminder} isArchived={false} />
+      </MemoryRouter>,
+    );
+    expect(screen.getByText(/🔔/)).toBeInTheDocument();
+  });
 });
