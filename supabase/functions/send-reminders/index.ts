@@ -57,20 +57,17 @@ function getCurrentDayOfWeek(): number {
   return new Date().getUTCDay();
 }
 
-Deno.serve(async (req: Request) => {
-  // 1. Auth check
-  const authHeader = req.headers.get('Authorization');
-  const expectedKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-  if (!expectedKey || authHeader !== `Bearer ${expectedKey}`) {
-    return new Response('Unauthorized', { status: 401 });
-  }
+Deno.serve(async (_req: Request) => {
+  // Auth is handled by Supabase Edge Runtime's built-in JWT verification.
+  // Only valid JWT tokens (anon_key, service_role_key) can reach this function.
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL');
-  if (!supabaseUrl || !expectedKey) {
+  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  if (!supabaseUrl || !serviceRoleKey) {
     return new Response('Missing environment configuration', { status: 500 });
   }
 
-  const supabase = createClient(supabaseUrl, expectedKey);
+  const supabase = createClient(supabaseUrl, serviceRoleKey);
 
   const vapidPublicKey = Deno.env.get('VAPID_PUBLIC_KEY') ?? '';
   const vapidPrivateKey = Deno.env.get('VAPID_PRIVATE_KEY') ?? '';
