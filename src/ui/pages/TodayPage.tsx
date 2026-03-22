@@ -284,22 +284,6 @@ export function TodayPage() {
     ? 'Today'
     : formatDisplayDate(selectedDate).split(' ')[0];
 
-  if (isLoading) {
-    return (
-      <div className="mx-auto w-full max-w-2xl px-4 py-6">
-        <LoadingState />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="mx-auto w-full max-w-2xl px-4 py-6">
-        <ErrorState message={error} onRetry={handleRetry} />
-      </div>
-    );
-  }
-
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-6">
       <header className="mb-6">
@@ -324,7 +308,11 @@ export function TodayPage() {
         </div>
       )}
 
-      {dueHabits.length === 0 ? (
+      {error && <ErrorState message={error} onRetry={handleRetry} />}
+
+      {isLoading ? (
+        <LoadingState />
+      ) : dueHabits.length === 0 ? (
         <EmptyState selectedDate={selectedDate} />
       ) : (
         <>
