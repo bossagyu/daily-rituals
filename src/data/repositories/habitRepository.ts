@@ -94,5 +94,6 @@ export type HabitRepository = {
     input: UpdateHabitInput,
   ) => Promise<Habit | null>;
   readonly archive: (id: string) => Promise<void>;
+  readonly remove: (id: string) => Promise<void>;
   readonly findArchived: () => Promise<Habit[]>;
 };

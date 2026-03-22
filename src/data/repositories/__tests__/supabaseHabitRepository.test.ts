@@ -232,6 +232,7 @@ describe('SupabaseHabitRepository', () => {
         frequency_type: 'daily',
         frequency_value: '{}',
         color: '#FF0000',
+        reminder_time: null,
       });
       expect(result).toEqual(sampleHabit);
     });
@@ -258,6 +259,7 @@ describe('SupabaseHabitRepository', () => {
         frequency_type: 'weekly_days',
         frequency_value: '[1,3,5]',
         color: '#00FF00',
+        reminder_time: null,
       });
       expect(result.frequency).toEqual({ type: 'weekly_days', days: [1, 3, 5] });
     });

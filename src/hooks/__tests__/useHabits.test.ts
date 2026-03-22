@@ -45,6 +45,7 @@ function createMockRepository(): Mocked<HabitRepository> {
     create: vi.fn().mockResolvedValue(SAMPLE_HABIT_1),
     update: vi.fn().mockResolvedValue(SAMPLE_HABIT_1),
     archive: vi.fn().mockResolvedValue(undefined),
+    remove: vi.fn().mockResolvedValue(undefined),
     findArchived: vi.fn().mockResolvedValue([]),
   };
 }

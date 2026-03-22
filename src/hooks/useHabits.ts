@@ -20,6 +20,7 @@ export type UseHabitsReturn = {
   readonly createHabit: (input: CreateHabitInput) => Promise<void>;
   readonly updateHabit: (id: string, input: UpdateHabitInput) => Promise<void>;
   readonly archiveHabit: (id: string) => Promise<void>;
+  readonly deleteHabit: (id: string) => Promise<void>;
   readonly refresh: () => Promise<void>;
 };
 
@@ -60,6 +61,11 @@ export function useHabits(repository: HabitRepository): UseHabitsReturn {
     [manager]
   );
 
+  const deleteHabit = useCallback(
+    (id: string) => manager.deleteHabit(id),
+    [manager]
+  );
+
   const refresh = useCallback(() => manager.refresh(), [manager]);
 
   return {
@@ -69,6 +75,7 @@ export function useHabits(repository: HabitRepository): UseHabitsReturn {
     createHabit,
     updateHabit,
     archiveHabit,
+    deleteHabit,
     refresh,
   };
 }

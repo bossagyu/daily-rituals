@@ -90,6 +90,7 @@ export const createSupabaseHabitRepository = (
         frequency_type: frequencyType,
         frequency_value: frequencyValue,
         color: input.color,
+        reminder_time: input.reminderTime ?? null,
       })
       .select()
       .single();
@@ -149,6 +150,17 @@ export const createSupabaseHabitRepository = (
 
     if (error) {
       throw new Error(`Failed to archive habit: ${error.message}`);
+    }
+  },
+
+  async remove(id: string): Promise<void> {
+    const { error } = await client
+      .from('habits')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      throw new Error(`Failed to delete habit: ${error.message}`);
     }
   },
 
