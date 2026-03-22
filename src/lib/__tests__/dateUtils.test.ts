@@ -51,6 +51,14 @@ describe('addDays', () => {
   it('handles month boundary backwards', () => {
     expect(addDays('2026-04-01', -1)).toBe('2026-03-31');
   });
+
+  it('handles year boundary (Dec 31 + 1)', () => {
+    expect(addDays('2026-12-31', 1)).toBe('2027-01-01');
+  });
+
+  it('handles year boundary (Jan 1 - 1)', () => {
+    expect(addDays('2027-01-01', -1)).toBe('2026-12-31');
+  });
 });
 
 describe('isToday', () => {

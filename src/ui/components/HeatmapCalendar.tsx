@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/popover';
 import type { CalendarDay, DayAchievement, HeatmapLevel } from '@/domain/services/calendarService';
 import { getHeatmapLevel } from '@/domain/services/calendarService';
+import { getTodayString } from '@/lib/dateUtils';
 import { cn } from '@/lib/utils';
 
 // --- Types ---
@@ -39,11 +40,6 @@ const HEATMAP_CLASSES: Record<HeatmapLevel, string> = {
 };
 
 // --- Utilities ---
-
-function getTodayString(): string {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-}
 
 function isFutureDate(dateStr: string, today: string): boolean {
   return dateStr > today;

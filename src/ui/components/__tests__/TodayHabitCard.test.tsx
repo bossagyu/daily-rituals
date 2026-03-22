@@ -61,6 +61,14 @@ describe('TodayHabitCard', () => {
     expect(checkbox).toBeDisabled();
   });
 
+  it('applies opacity-60 when disabled', () => {
+    const { container } = render(
+      <TodayHabitCard habit={baseHabit} {...defaultProps} disabled />,
+    );
+    const card = container.firstChild as HTMLElement;
+    expect(card.className).toContain('opacity-60');
+  });
+
   it('does not call onToggle when disabled and checkbox is clicked', () => {
     const onToggle = vi.fn();
     render(
