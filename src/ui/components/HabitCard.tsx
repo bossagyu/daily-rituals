@@ -37,7 +37,7 @@ export function HabitCard({ habit, onRestore, isArchived }: HabitCardProps) {
           {formatFrequency(habit.frequency)}
           {habit.reminderTime && (
             <span className="ml-1.5">
-              🔔 {utcToLocalTime(habit.reminderTime.substring(0, 5), getBrowserTimezoneOffset())}
+              通知 {utcToLocalTime(habit.reminderTime.substring(0, 5), getBrowserTimezoneOffset())}
             </span>
           )}
         </span>

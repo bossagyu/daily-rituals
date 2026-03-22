@@ -139,7 +139,7 @@ describe('HabitCard', () => {
         <HabitCard habit={activeHabit} isArchived={false} />
       </MemoryRouter>,
     );
-    expect(screen.queryByText(/🔔/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/通知/)).not.toBeInTheDocument();
   });
 
   it('shows reminder time when reminderTime is set', () => {
@@ -152,6 +152,6 @@ describe('HabitCard', () => {
         <HabitCard habit={habitWithReminder} isArchived={false} />
       </MemoryRouter>,
     );
-    expect(screen.getByText(/🔔/)).toBeInTheDocument();
+    expect(screen.getByText(/通知/)).toBeInTheDocument();
   });
 });
