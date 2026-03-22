@@ -12,7 +12,7 @@ import { useAuthContext } from '@/hooks/useAuthContext';
 import { useHabits } from '@/hooks/useHabits';
 import { useCompletions } from '@/hooks/useCompletions';
 import { useStreak } from '@/hooks/useStreak';
-import { isDueToday } from '@/domain/services/frequencyService';
+import { isDueOnDate } from '@/domain/services/frequencyService';
 import { TodayHabitCard } from '@/ui/components/TodayHabitCard';
 import type { Habit } from '@/domain/models';
 
@@ -184,7 +184,7 @@ export function TodayPage() {
       Number(today.slice(5, 7)) - 1,
       Number(today.slice(8, 10)),
     );
-    return habits.filter((habit) => isDueToday(habit, todayDate));
+    return habits.filter((habit) => isDueOnDate(habit, todayDate));
   }, [habits, today]);
 
   const sortedHabits = useMemo(() => {

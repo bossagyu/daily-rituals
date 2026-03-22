@@ -9,7 +9,7 @@ const DAYS_IN_WEEK = 7;
  * - weekly_days: true if the date's day of week is in the specified days
  * - weekly_count: always true (the user can complete it on any day)
  */
-export function isDueToday(habit: Habit, date: Date): boolean {
+export function isDueOnDate(habit: Habit, date: Date): boolean {
   const { frequency } = habit;
 
   switch (frequency.type) {
