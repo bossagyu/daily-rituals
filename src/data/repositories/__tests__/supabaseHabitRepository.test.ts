@@ -449,6 +449,30 @@ describe('SupabaseHabitRepository', () => {
     });
   });
 
+  describe('unarchive', () => {
+    it('should set archived_at to null on the habit', async () => {
+      mock.chain.eq.mockResolvedValue({ data: null, error: null });
+
+      const repo = createSupabaseHabitRepository(mock.client, USER_ID);
+      await repo.unarchive('habit-1');
+
+      expect(mock.chain.update).toHaveBeenCalledWith({ archived_at: null });
+      expect(mock.chain.eq).toHaveBeenCalledWith('id', 'habit-1');
+    });
+
+    it('should throw on Supabase error', async () => {
+      mock.chain.eq.mockResolvedValue({
+        data: null,
+        error: { message: 'Unarchive failed' },
+      });
+
+      const repo = createSupabaseHabitRepository(mock.client, USER_ID);
+      await expect(repo.unarchive('habit-1')).rejects.toThrow(
+        'Failed to unarchive habit: Unarchive failed',
+      );
+    });
+  });
+
   describe('remove', () => {
     it('should delete the habit by id', async () => {
       mock.chain.eq.mockResolvedValue({ data: null, error: null });
