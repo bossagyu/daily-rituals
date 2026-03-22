@@ -58,19 +58,20 @@ function getCurrentDayOfWeek(): number {
 }
 
 Deno.serve(async (req: Request) => {
-  // 1. Auth check
+  // Deployed with --no-verify-jwt to bypass Edge Runtime JWT issues with pg_cron.
+  // Custom auth check ensures only service_role_key bearers can invoke this function.
   const authHeader = req.headers.get('Authorization');
-  const expectedKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-  if (!expectedKey || authHeader !== `Bearer ${expectedKey}`) {
+  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  if (!serviceRoleKey || authHeader !== `Bearer ${serviceRoleKey}`) {
     return new Response('Unauthorized', { status: 401 });
   }
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL');
-  if (!supabaseUrl || !expectedKey) {
+  if (!supabaseUrl) {
     return new Response('Missing environment configuration', { status: 500 });
   }
 
-  const supabase = createClient(supabaseUrl, expectedKey);
+  const supabase = createClient(supabaseUrl, serviceRoleKey);
 
   const vapidPublicKey = Deno.env.get('VAPID_PUBLIC_KEY') ?? '';
   const vapidPrivateKey = Deno.env.get('VAPID_PRIVATE_KEY') ?? '';
@@ -84,7 +85,7 @@ Deno.serve(async (req: Request) => {
   const { data: habits, error: habitsError } = await supabase
     .from('habits')
     .select('id, user_id, name, frequency_type, frequency_value, reminder_time, last_notified_date')
-    .eq('reminder_time', currentSlotWithSeconds)
+    .lte('reminder_time', currentSlotWithSeconds)
     .is('archived_at', null)
     .or(`last_notified_date.is.null,last_notified_date.neq.${today}`);
 
