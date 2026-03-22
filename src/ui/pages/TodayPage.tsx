@@ -187,6 +187,22 @@ export function TodayPage() {
     return habits.filter((habit) => isDueToday(habit, todayDate));
   }, [habits, today]);
 
+  const sortedHabits = useMemo(() => {
+    const incomplete = todaysHabits.filter((h) => !isCompleted(h.id, today));
+    const completed = todaysHabits.filter((h) => isCompleted(h.id, today));
+
+    const sortedIncomplete = [...incomplete].sort((a, b) => {
+      if (a.reminderTime && b.reminderTime) {
+        return a.reminderTime.localeCompare(b.reminderTime);
+      }
+      if (a.reminderTime) return -1;
+      if (b.reminderTime) return 1;
+      return 0;
+    });
+
+    return [...sortedIncomplete, ...completed];
+  }, [todaysHabits, isCompleted, today]);
+
   const completedCount = useMemo(
     () => todaysHabits.filter((h) => isCompleted(h.id, today)).length,
     [todaysHabits, isCompleted, today],
@@ -234,7 +250,7 @@ export function TodayPage() {
             />
           </div>
           <HabitList
-            habits={todaysHabits}
+            habits={sortedHabits}
             today={today}
             isCompleted={isCompleted}
             toggleCompletion={toggleCompletion}
