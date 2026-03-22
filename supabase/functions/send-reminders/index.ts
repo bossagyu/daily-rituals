@@ -81,7 +81,7 @@ Deno.serve(async (_req: Request) => {
   const { data: habits, error: habitsError } = await supabase
     .from('habits')
     .select('id, user_id, name, frequency_type, frequency_value, reminder_time, last_notified_date')
-    .eq('reminder_time', currentSlotWithSeconds)
+    .lte('reminder_time', currentSlotWithSeconds)
     .is('archived_at', null)
     .or(`last_notified_date.is.null,last_notified_date.neq.${today}`);
 
