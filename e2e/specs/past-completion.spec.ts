@@ -26,16 +26,16 @@ test.describe('Past Completion', () => {
     await page.goto('/?date=2026-03-01');
     await expect(page.getByText('今日に戻る')).toBeVisible({ timeout: 10000 });
     await page.getByText('今日に戻る').click();
-    await expect(page.getByText('Today')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole('heading', { name: 'Today' })).toBeVisible({ timeout: 10000 });
   });
 
   test('loads specific date via URL parameter', async ({ page }) => {
     await page.goto('/?date=2026-03-15');
-    await expect(page.getByText(/2026年3月15日/)).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole('heading', { name: '2026年3月15日' })).toBeVisible({ timeout: 10000 });
   });
 
   test('falls back to today for invalid date parameter', async ({ page }) => {
     await page.goto('/?date=invalid');
-    await expect(page.getByText('Today')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole('heading', { name: 'Today' })).toBeVisible({ timeout: 10000 });
   });
 });
