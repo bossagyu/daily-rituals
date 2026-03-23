@@ -5,6 +5,7 @@ import * as path from 'path';
 import { fileURLToPath } from 'url';
 import {
   SUPABASE_LOCAL_URL,
+  SUPABASE_LOCAL_ANON_KEY,
   SUPABASE_LOCAL_SERVICE_ROLE_KEY,
 } from '../playwright.config';
 
@@ -62,8 +63,9 @@ async function globalSetup(): Promise<void> {
   // Use the app's Supabase instance to sign in by calling the auth API directly
   // and storing the result in the same format the SDK expects
   await page.evaluate(
-    async ({ supabaseUrl, email, password }: {
+    async ({ supabaseUrl, anonKey, email, password }: {
       supabaseUrl: string;
+      anonKey: string;
       email: string;
       password: string;
     }) => {
@@ -71,7 +73,7 @@ async function globalSetup(): Promise<void> {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0',
+          'apikey': anonKey,
         },
         body: JSON.stringify({ email, password }),
       });
@@ -92,6 +94,7 @@ async function globalSetup(): Promise<void> {
     },
     {
       supabaseUrl: SUPABASE_LOCAL_URL,
+      anonKey: SUPABASE_LOCAL_ANON_KEY,
       email: TEST_USER_EMAIL,
       password: TEST_USER_PASSWORD,
     },
