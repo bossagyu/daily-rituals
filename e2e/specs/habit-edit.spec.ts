@@ -44,7 +44,8 @@ test.describe('Habit Edit', () => {
 
     await page.goto(`/habits/${id}`);
 
-    // Click archive button
+    // Click archive button and accept confirmation dialog
+    page.on('dialog', dialog => dialog.accept());
     await page.getByRole('button', { name: /アーカイブ/ }).click();
 
     // Should redirect to habits list

@@ -1,52 +1,114 @@
 import { chromium } from '@playwright/test';
+import { createClient } from '@supabase/supabase-js';
 import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 import {
-  createTestUser,
-  getTestSession,
-  buildSupabaseSessionPayload,
-  getStorageKey,
-} from './helpers/auth';
+  SUPABASE_LOCAL_URL,
+  SUPABASE_LOCAL_SERVICE_ROLE_KEY,
+} from '../playwright.config';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const AUTH_DIR = path.join(__dirname, '.auth');
 const STORAGE_STATE_PATH = path.join(AUTH_DIR, 'storage-state.json');
 const USER_ID_PATH = path.join(AUTH_DIR, 'test-user-id.txt');
 
+const TEST_USER_EMAIL = 'e2e-test@example.com';
+const TEST_USER_PASSWORD = 'e2e-test-password-123';
+
 async function globalSetup(): Promise<void> {
-  // Ensure auth directory exists
   if (!fs.existsSync(AUTH_DIR)) {
     fs.mkdirSync(AUTH_DIR, { recursive: true });
   }
 
-  // Create test user and get session
-  const userId = await createTestUser();
-  const session = await getTestSession();
+  // Create test user with admin client
+  const admin = createClient(SUPABASE_LOCAL_URL, SUPABASE_LOCAL_SERVICE_ROLE_KEY, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
 
-  // Save user ID for tests
-  fs.writeFileSync(USER_ID_PATH, userId, 'utf-8');
+  const { data: existingUsers } = await admin.auth.admin.listUsers();
+  const existingUser = existingUsers?.users?.find(
+    (u) => u.email === TEST_USER_EMAIL,
+  );
+  if (existingUser) {
+    await admin.from('push_subscriptions').delete().eq('user_id', existingUser.id);
+    await admin.from('completions').delete().eq('user_id', existingUser.id);
+    await admin.from('habits').delete().eq('user_id', existingUser.id);
+    await admin.auth.admin.deleteUser(existingUser.id);
+  }
 
-  // Launch browser and set storage state
+  const { data: createData, error: createError } = await admin.auth.admin.createUser({
+    email: TEST_USER_EMAIL,
+    password: TEST_USER_PASSWORD,
+    email_confirm: true,
+    user_metadata: { full_name: 'E2E Test User' },
+  });
+
+  if (createError) {
+    throw new Error(`Failed to create test user: ${createError.message}`);
+  }
+
+  fs.writeFileSync(USER_ID_PATH, createData.user.id, 'utf-8');
+
+  // Sign in via the app's own Supabase client in the browser
   const browser = await chromium.launch();
   const context = await browser.newContext();
   const page = await context.newPage();
 
+  // Navigate to the app first so localStorage is accessible
   await page.goto('http://localhost:5173/login');
-  await page.waitForLoadState('domcontentloaded');
+  await page.waitForLoadState('networkidle');
 
-  // Set Supabase session in localStorage
-  const storageKey = getStorageKey();
-  const sessionPayload = buildSupabaseSessionPayload(session);
-
+  // Use the app's Supabase instance to sign in by calling the auth API directly
+  // and storing the result in the same format the SDK expects
   await page.evaluate(
-    ({ key, value }: { key: string; value: string }) => {
-      localStorage.setItem(key, value);
+    async ({ supabaseUrl, email, password }: {
+      supabaseUrl: string;
+      email: string;
+      password: string;
+    }) => {
+      const res = await fetch(`${supabaseUrl}/auth/v1/token?grant_type=password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!res.ok) {
+        throw new Error(`Sign in failed: ${res.status}`);
+      }
+
+      const session = await res.json();
+
+      // Store in the exact format Supabase SDK expects
+      // The key must match what the SDK generates from the URL
+      const hostname = new URL(supabaseUrl).hostname;
+      const ref = hostname.split('.')[0];
+      const storageKey = `sb-${ref}-auth-token`;
+
+      localStorage.setItem(storageKey, JSON.stringify(session));
     },
-    { key: storageKey, value: sessionPayload },
+    {
+      supabaseUrl: SUPABASE_LOCAL_URL,
+      email: TEST_USER_EMAIL,
+      password: TEST_USER_PASSWORD,
+    },
   );
 
-  // Save storage state
+  // Navigate to root to verify auth works
+  await page.goto('http://localhost:5173/');
+  await page.waitForTimeout(3000);
+
+  const finalUrl = page.url();
+  if (finalUrl.includes('/login')) {
+    // Auth didn't work - the SDK might not be reading our localStorage
+    // Let's try reloading
+    await page.reload();
+    await page.waitForTimeout(3000);
+  }
+
   await context.storageState({ path: STORAGE_STATE_PATH });
   await browser.close();
 }

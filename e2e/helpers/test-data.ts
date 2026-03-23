@@ -67,6 +67,7 @@ export async function seedCompletion(
 
 export async function cleanupTestData(userId: string): Promise<void> {
   const admin = createAdminClient();
+  await admin.from('push_subscriptions').delete().eq('user_id', userId);
   await admin.from('completions').delete().eq('user_id', userId);
   await admin.from('habits').delete().eq('user_id', userId);
 }
