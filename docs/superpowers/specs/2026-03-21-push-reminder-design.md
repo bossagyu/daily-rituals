@@ -19,18 +19,23 @@
 
 ## Architecture
 
+> **注: 2026-03-22 アーキテクチャ変更済み**
+> Deno Edge Functionでのweb-pushライブラリ互換性問題により、Vercel API Route (Node.js) に移行。
+
 ```
-[Browser Service Worker] <-- Web Push -- [Supabase Edge Function: send-reminders]
+[Browser Service Worker] <-- Web Push -- [Vercel API Route: api/send-reminders.ts]
                                                     |
                                             [Supabase DB]
                                           (habits, completions,
                                            push_subscriptions)
                                                     ^
                                             [pg_cron + pg_net]
-                                          (10分ごとにEdge Functionを呼び出し)
+                                          (10分ごとにVercel API Routeを呼び出し)
 ```
 
-pg_cron が10分ごとに pg_net 経由で Edge Function を HTTP呼び出しし、該当時刻のリマインダーを持つ未完了習慣を検索し、Web Push APIで通知を送信する。
+pg_cron が10分ごとに pg_net 経由で Vercel API Route を HTTP呼び出しし、該当時刻のリマインダーを持つ未完了習慣を検索し、`web-push` npmパッケージ (Node.js) で通知を送信する。
+
+CRON_SECRET ヘッダーによる認証で、不正なリクエストを排除する。
 
 ## Database Design
 
