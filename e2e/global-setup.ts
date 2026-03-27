@@ -34,6 +34,7 @@ async function globalSetup(): Promise<void> {
   if (existingUser) {
     await admin.from('push_subscriptions').delete().eq('user_id', existingUser.id);
     await admin.from('completions').delete().eq('user_id', existingUser.id);
+    await admin.from('tasks').delete().eq('user_id', existingUser.id);
     await admin.from('habits').delete().eq('user_id', existingUser.id);
     await admin.auth.admin.deleteUser(existingUser.id);
   }

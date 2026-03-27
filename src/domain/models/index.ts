@@ -17,6 +17,9 @@ export { pushSubscriptionSchema } from './pushSubscription';
 export type { Streak } from './streak';
 export { streakSchema } from './streak';
 
+export type { Task, CreateTaskInput, UpdateTaskInput } from './task';
+export { taskSchema, TASK_NAME_MAX_LENGTH } from './task';
+
 export type { HabitFormState, FrequencyType, ValidationResult } from './habitFormValidation';
 export {
   validateHabitForm,

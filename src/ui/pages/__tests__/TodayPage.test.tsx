@@ -16,6 +16,8 @@ import type { Habit } from '@/domain/models';
 import type { Completion } from '@/domain/models';
 import type { HabitRepository } from '@/data/repositories/habitRepository';
 import type { CompletionRepository } from '@/data/repositories/completionRepository';
+import type { TaskRepository } from '@/data/repositories/taskRepository';
+import type { Task } from '@/domain/models/task';
 
 // --- Mock Data ---
 
@@ -96,15 +98,43 @@ vi.mock('@/hooks/useAuthContext', () => ({
   }),
 }));
 
+// --- Mock Task Repository ---
+
+function createMockTaskRepository(
+  overrides: Partial<TaskRepository> = {},
+): TaskRepository {
+  return {
+    findByDate: vi.fn().mockResolvedValue([]),
+    create: vi.fn().mockImplementation((input: { name: string; dueDate: string | null }) =>
+      Promise.resolve({
+        id: 'task-new',
+        userId: TEST_USER_ID,
+        name: input.name,
+        dueDate: input.dueDate,
+        completedAt: null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      } satisfies Task),
+    ),
+    update: vi.fn().mockResolvedValue({} as Task),
+    remove: vi.fn().mockResolvedValue(undefined),
+    complete: vi.fn().mockResolvedValue({} as Task),
+    uncomplete: vi.fn().mockResolvedValue({} as Task),
+    ...overrides,
+  };
+}
+
 // --- Mock useRepositories ---
 
 let mockHabitRepository: HabitRepository;
 let mockCompletionRepository: CompletionRepository;
+let mockTaskRepository: TaskRepository;
 
 vi.mock('@/hooks/useRepositories', () => ({
   useRepositories: () => ({
     habitRepository: mockHabitRepository,
     completionRepository: mockCompletionRepository,
+    taskRepository: mockTaskRepository,
   }),
 }));
 
@@ -133,6 +163,7 @@ describe('TodayPage', () => {
     vi.clearAllMocks();
     mockHabitRepository = createMockHabitRepository();
     mockCompletionRepository = createMockCompletionRepository();
+    mockTaskRepository = createMockTaskRepository();
   });
 
   it('displays loading state initially', () => {
@@ -161,7 +192,7 @@ describe('TodayPage', () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText('今日やるべき習慣はありません'),
+        screen.getByText('今日やるべきことはありません'),
       ).toBeInTheDocument();
     });
   });
@@ -412,7 +443,7 @@ describe('TodayPage', () => {
     await waitFor(() => {
       expect(screen.getByText('今日に戻る')).toBeInTheDocument();
       expect(
-        screen.getByText('この日にやるべき習慣はありませんでした'),
+        screen.getByText('この日にやるべきことはありませんでした'),
       ).toBeInTheDocument();
     });
   });

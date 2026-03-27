@@ -1,7 +1,7 @@
 /**
- * TodayPage - Main screen for daily habit tracking with date navigation.
+ * TodayPage - Main screen for daily habit and task tracking with date navigation.
  *
- * Displays the selected date's habits, completion checkboxes,
+ * Displays the selected date's habits and tasks, completion checkboxes,
  * streak counts, and weekly progress. Supports navigating to past dates
  * via URL search params (?date=YYYY-MM-DD).
  */
@@ -14,8 +14,11 @@ import { useAuthContext } from '@/hooks/useAuthContext';
 import { useHabits } from '@/hooks/useHabits';
 import { useCompletions } from '@/hooks/useCompletions';
 import { useStreak } from '@/hooks/useStreak';
+import { useTasks } from '@/hooks/useTasks';
 import { isDueOnDate } from '@/domain/services/frequencyService';
 import { TodayHabitCard } from '@/ui/components/TodayHabitCard';
+import { TaskCard } from '@/ui/components/TaskCard';
+import { TaskInlineInput } from '@/ui/components/TaskInlineInput';
 import { Button } from '@/components/ui/button';
 import {
   parseDateParam,
@@ -26,6 +29,13 @@ import {
   getTodayString,
 } from '@/lib/dateUtils';
 import type { Habit } from '@/domain/models';
+import type { Task } from '@/domain/models/task';
+
+// --- Unified list item type ---
+
+export type TodayItem =
+  | { readonly type: 'habit'; readonly habit: Habit; readonly isCompleted: boolean }
+  | { readonly type: 'task'; readonly task: Task };
 
 // --- State Components ---
 
@@ -75,12 +85,12 @@ function EmptyState({
 }) {
   const message = useMemo(() => {
     if (isToday(selectedDate)) {
-      return '今日やるべき習慣はありません';
+      return '今日やるべきことはありません';
     }
     if (isFutureDate(selectedDate)) {
-      return 'この日にやるべき習慣はありません';
+      return 'この日にやるべきことはありません';
     }
-    return 'この日にやるべき習慣はありませんでした';
+    return 'この日にやるべきことはありませんでした';
   }, [selectedDate]);
 
   return (
@@ -129,54 +139,6 @@ function DateNavigationHeader({
   );
 }
 
-// --- Habit List ---
-
-type HabitListProps = {
-  readonly habits: readonly Habit[];
-  readonly selectedDate: string;
-  readonly isCompleted: (habitId: string, date: string) => boolean;
-  readonly toggleCompletion: (habitId: string, date: string) => Promise<void>;
-  readonly getStreak: (habitId: string) => { readonly current: number; readonly longest: number };
-  readonly getWeeklyProgress: (habitId: string) => { readonly done: number; readonly target: number };
-  readonly onStreakRefresh: (habitId: string) => Promise<void>;
-  readonly disabled: boolean;
-};
-
-function HabitList({
-  habits,
-  selectedDate,
-  isCompleted,
-  toggleCompletion,
-  getStreak,
-  getWeeklyProgress,
-  onStreakRefresh,
-  disabled,
-}: HabitListProps) {
-  const handleToggle = useCallback(
-    async (habitId: string) => {
-      await toggleCompletion(habitId, selectedDate);
-      await onStreakRefresh(habitId);
-    },
-    [toggleCompletion, selectedDate, onStreakRefresh],
-  );
-
-  return (
-    <div className="flex flex-col gap-2">
-      {habits.map((habit) => (
-        <TodayHabitCard
-          key={habit.id}
-          habit={habit}
-          isCompleted={isCompleted(habit.id, selectedDate)}
-          streak={getStreak(habit.id)}
-          weeklyProgress={getWeeklyProgress(habit.id)}
-          onToggle={() => void handleToggle(habit.id)}
-          disabled={disabled}
-        />
-      ))}
-    </div>
-  );
-}
-
 // --- Progress Summary ---
 
 function ProgressSummary({
@@ -212,6 +174,66 @@ function ProgressSummary({
   );
 }
 
+// --- Sorting helpers ---
+
+export function buildTodayItems(
+  dueHabits: readonly Habit[],
+  tasks: readonly Task[],
+  isCompleted: (habitId: string, date: string) => boolean,
+  selectedDate: string,
+): readonly TodayItem[] {
+  // 1. Incomplete habits (by reminder time, then no-reminder at end)
+  const incompleteHabits = dueHabits
+    .filter((h) => !isCompleted(h.id, selectedDate))
+    .map((habit): TodayItem => ({ type: 'habit', habit, isCompleted: false }));
+
+  const sortedIncompleteHabits = [...incompleteHabits].sort((a, b) => {
+    if (a.type !== 'habit' || b.type !== 'habit') return 0;
+    const aTime = a.habit.reminderTime;
+    const bTime = b.habit.reminderTime;
+    if (aTime && bTime) return aTime.localeCompare(bTime);
+    if (aTime) return -1;
+    if (bTime) return 1;
+    return 0;
+  });
+
+  // 2. Incomplete tasks (due-date tasks first, then no-date, by created_at ascending)
+  const incompleteTasks = tasks
+    .filter((t) => t.completedAt === null)
+    .map((task): TodayItem => ({ type: 'task', task }));
+
+  const sortedIncompleteTasks = [...incompleteTasks].sort((a, b) => {
+    if (a.type !== 'task' || b.type !== 'task') return 0;
+    const aDue = a.task.dueDate;
+    const bDue = b.task.dueDate;
+    if (aDue && !bDue) return -1;
+    if (!aDue && bDue) return 1;
+    return a.task.createdAt.localeCompare(b.task.createdAt);
+  });
+
+  // 3. Completed habits (original order)
+  const completedHabits = dueHabits
+    .filter((h) => isCompleted(h.id, selectedDate))
+    .map((habit): TodayItem => ({ type: 'habit', habit, isCompleted: true }));
+
+  // 4. Completed tasks (by completed_at descending)
+  const completedTasks = tasks
+    .filter((t) => t.completedAt !== null)
+    .map((task): TodayItem => ({ type: 'task', task }));
+
+  const sortedCompletedTasks = [...completedTasks].sort((a, b) => {
+    if (a.type !== 'task' || b.type !== 'task') return 0;
+    return (b.task.completedAt ?? '').localeCompare(a.task.completedAt ?? '');
+  });
+
+  return [
+    ...sortedIncompleteHabits,
+    ...sortedIncompleteTasks,
+    ...completedHabits,
+    ...sortedCompletedTasks,
+  ];
+}
+
 // --- Main Page ---
 
 export function TodayPage() {
@@ -237,10 +259,20 @@ export function TodayPage() {
   }, [setSearchParams]);
 
   const { refreshSession } = useAuthContext();
-  const { habitRepository, completionRepository } = useRepositories();
+  const { habitRepository, completionRepository, taskRepository } = useRepositories();
   const { habits, isLoading: habitsLoading, error: habitsError, refresh: refreshHabits } = useHabits(habitRepository);
   const { isCompleted, toggleCompletion, loading: completionsLoading, error: completionsError, refreshCompletions } = useCompletions(completionRepository, selectedDate, refreshSession);
   const { getStreak, getWeeklyProgress, refreshStreak } = useStreak(completionRepository, habits, todayStr);
+  const {
+    tasks,
+    isLoading: tasksLoading,
+    error: tasksError,
+    createTask,
+    updateTask,
+    removeTask,
+    completeTask,
+    uncompleteTask,
+  } = useTasks(taskRepository, selectedDate);
 
   const dueHabits = useMemo(() => {
     const selectedDateObj = new Date(
@@ -251,34 +283,41 @@ export function TodayPage() {
     return habits.filter((habit) => isDueOnDate(habit, selectedDateObj));
   }, [habits, selectedDate]);
 
-  const sortedHabits = useMemo(() => {
-    const incomplete = dueHabits.filter((h) => !isCompleted(h.id, selectedDate));
-    const completed = dueHabits.filter((h) => isCompleted(h.id, selectedDate));
+  const todayItems = useMemo(
+    () => buildTodayItems(dueHabits, tasks, isCompleted, selectedDate),
+    [dueHabits, tasks, isCompleted, selectedDate],
+  );
 
-    const sortedIncomplete = [...incomplete].sort((a, b) => {
-      if (a.reminderTime && b.reminderTime) {
-        return a.reminderTime.localeCompare(b.reminderTime);
-      }
-      if (a.reminderTime) return -1;
-      if (b.reminderTime) return 1;
-      return 0;
-    });
-
-    return [...sortedIncomplete, ...completed];
-  }, [dueHabits, isCompleted, selectedDate]);
-
-  const completedCount = useMemo(
+  const completedHabitCount = useMemo(
     () => dueHabits.filter((h) => isCompleted(h.id, selectedDate)).length,
     [dueHabits, isCompleted, selectedDate],
   );
 
-  const isLoading = habitsLoading || completionsLoading;
-  const error = habitsError ?? completionsError;
+  const completedTaskCount = useMemo(
+    () => tasks.filter((t) => t.completedAt !== null).length,
+    [tasks],
+  );
+
+  const totalCount = dueHabits.length + tasks.length;
+  const completedCount = completedHabitCount + completedTaskCount;
+
+  const isLoading = habitsLoading || completionsLoading || tasksLoading;
+  const error = habitsError ?? completionsError ?? tasksError;
 
   const handleRetry = useCallback(() => {
     void refreshHabits();
     void refreshCompletions();
   }, [refreshHabits, refreshCompletions]);
+
+  const handleToggleHabit = useCallback(
+    async (habitId: string) => {
+      await toggleCompletion(habitId, selectedDate);
+      await refreshStreak(habitId);
+    },
+    [toggleCompletion, selectedDate, refreshStreak],
+  );
+
+  const isEmpty = dueHabits.length === 0 && tasks.length === 0;
 
   const pageTitle = isSelectedToday
     ? 'Today'
@@ -312,29 +351,51 @@ export function TodayPage() {
 
       {isLoading ? (
         <LoadingState />
-      ) : dueHabits.length === 0 ? (
+      ) : isEmpty ? (
         <EmptyState selectedDate={selectedDate} />
       ) : (
         <>
           <div className="mb-4">
             <ProgressSummary
               completed={completedCount}
-              total={dueHabits.length}
+              total={totalCount}
               displayDate={displayDate}
             />
           </div>
-          <HabitList
-            habits={sortedHabits}
-            selectedDate={selectedDate}
-            isCompleted={isCompleted}
-            toggleCompletion={toggleCompletion}
-            getStreak={getStreak}
-            getWeeklyProgress={getWeeklyProgress}
-            onStreakRefresh={refreshStreak}
-            disabled={isSelectedFuture}
-          />
+          <div className="flex flex-col gap-2">
+            {todayItems.map((item) =>
+              item.type === 'task' ? (
+                <TaskCard
+                  key={`task-${item.task.id}`}
+                  task={item.task}
+                  disabled={isSelectedFuture}
+                  onToggleComplete={(id) =>
+                    item.task.completedAt !== null
+                      ? void uncompleteTask(id)
+                      : void completeTask(id)
+                  }
+                  onUpdate={(id, input) => void updateTask(id, input)}
+                  onRemove={(id) => void removeTask(id)}
+                />
+              ) : (
+                <TodayHabitCard
+                  key={`habit-${item.habit.id}`}
+                  habit={item.habit}
+                  isCompleted={item.isCompleted}
+                  streak={getStreak(item.habit.id)}
+                  weeklyProgress={getWeeklyProgress(item.habit.id)}
+                  onToggle={() => void handleToggleHabit(item.habit.id)}
+                  disabled={isSelectedFuture}
+                />
+              ),
+            )}
+          </div>
         </>
       )}
+
+      <div className="mt-4">
+        <TaskInlineInput onAdd={(name) => void createTask({ name, dueDate: null })} />
+      </div>
     </div>
   );
 }

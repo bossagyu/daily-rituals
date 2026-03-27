@@ -10,14 +10,17 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { HabitRepository } from '@/data/repositories/habitRepository';
 import type { CompletionRepository } from '@/data/repositories/completionRepository';
 import type { PushSubscriptionRepository } from '@/data/repositories/pushSubscriptionRepository';
+import type { TaskRepository } from '@/data/repositories/taskRepository';
 import { createSupabaseHabitRepository } from '@/data/repositories/supabaseHabitRepository';
 import { createSupabaseCompletionRepository } from '@/data/repositories/supabaseCompletionRepository';
 import { createSupabasePushSubscriptionRepository } from '@/data/repositories/supabasePushSubscriptionRepository';
+import { createSupabaseTaskRepository } from '@/data/repositories/supabaseTaskRepository';
 
 export type RepositoryContextValue = {
   readonly habitRepository: HabitRepository;
   readonly completionRepository: CompletionRepository;
   readonly pushSubscriptionRepository: PushSubscriptionRepository;
+  readonly taskRepository: TaskRepository;
 };
 
 const RepositoryContext = createContext<RepositoryContextValue | null>(null);
@@ -42,6 +45,7 @@ export function RepositoryProvider({
       habitRepository: createSupabaseHabitRepository(client, userId),
       completionRepository: createSupabaseCompletionRepository(client, userId),
       pushSubscriptionRepository: createSupabasePushSubscriptionRepository(client, userId),
+      taskRepository: createSupabaseTaskRepository(client, userId),
     }),
     [client, userId],
   );
