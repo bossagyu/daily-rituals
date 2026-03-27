@@ -121,13 +121,30 @@ export function TaskCard({
             aria-label="タスク名"
           />
 
-          <input
-            type="date"
-            value={editDueDate}
-            onChange={(e) => setEditDueDate(e.target.value)}
-            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
-            aria-label="期限日"
-          />
+          <div>
+            <label className="mb-1 block text-xs text-muted-foreground">
+              日付（任意）
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="date"
+                value={editDueDate}
+                onChange={(e) => setEditDueDate(e.target.value)}
+                className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
+                aria-label="期限日"
+              />
+              {editDueDate && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setEditDueDate('')}
+                  aria-label="日付をクリア"
+                >
+                  ✕
+                </Button>
+              )}
+            </div>
+          </div>
 
           <div className="flex gap-2">
             <Button
