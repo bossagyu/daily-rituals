@@ -114,6 +114,7 @@ export function TaskCard({
     return (
       <div
         ref={cardRef}
+        data-testid="task-card"
         className="rounded-2xl border border-border bg-card p-4 shadow-sm"
       >
         <div className="flex flex-col gap-3">
@@ -159,6 +160,7 @@ export function TaskCard({
   return (
     <div
       ref={cardRef}
+      data-testid="task-card"
       className={`flex items-center gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm transition-all hover:border-primary/20${
         isCompleted ? ' opacity-60' : ''
       }${disabled ? ' opacity-60' : ''}`}
