@@ -6,6 +6,9 @@ export { DuplicateCompletionError } from './completionRepository';
 
 export type { PushSubscriptionRepository } from './pushSubscriptionRepository';
 
+export type { TaskRepository } from './taskRepository';
+
 export { createSupabaseHabitRepository } from './supabaseHabitRepository';
 export { createSupabaseCompletionRepository } from './supabaseCompletionRepository';
 export { createSupabasePushSubscriptionRepository } from './supabasePushSubscriptionRepository';
+export { createSupabaseTaskRepository } from './supabaseTaskRepository';
