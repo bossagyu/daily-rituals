@@ -174,11 +174,11 @@ export function TaskCard({
       data-testid="task-card"
       className={`flex items-center gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm transition-all hover:border-primary/20${
         isCompleted ? ' opacity-60' : ''
-      }${disabled ? ' opacity-60' : ''}`}
-      onClick={disabled ? undefined : handleCardClick}
+      }`}
+      onClick={handleCardClick}
       role="button"
-      tabIndex={disabled ? -1 : 0}
-      onKeyDown={disabled ? undefined : (e) => {
+      tabIndex={0}
+      onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
           setIsExpanded(true);
