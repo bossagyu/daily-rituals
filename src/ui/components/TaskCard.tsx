@@ -86,20 +86,14 @@ export function TaskCard({
       return;
     }
 
-    const input: UpdateTaskInput = {};
-    const updates: Record<string, unknown> = {};
-
-    if (trimmedName !== task.name) {
-      updates.name = trimmedName;
-    }
-
     const newDueDate = editDueDate === '' ? null : editDueDate;
-    if (newDueDate !== task.dueDate) {
-      updates.dueDate = newDueDate;
-    }
+    const updates: UpdateTaskInput = {
+      ...(trimmedName !== task.name ? { name: trimmedName } : {}),
+      ...(newDueDate !== task.dueDate ? { dueDate: newDueDate } : {}),
+    };
 
     if (Object.keys(updates).length > 0) {
-      onUpdate(task.id, updates as UpdateTaskInput);
+      onUpdate(task.id, updates);
     }
 
     setIsExpanded(false);

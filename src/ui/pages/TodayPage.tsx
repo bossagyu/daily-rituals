@@ -33,7 +33,7 @@ import type { Task } from '@/domain/models/task';
 
 // --- Unified list item type ---
 
-type TodayItem =
+export type TodayItem =
   | { readonly type: 'habit'; readonly habit: Habit; readonly isCompleted: boolean }
   | { readonly type: 'task'; readonly task: Task };
 
@@ -176,7 +176,7 @@ function ProgressSummary({
 
 // --- Sorting helpers ---
 
-function buildTodayItems(
+export function buildTodayItems(
   dueHabits: readonly Habit[],
   tasks: readonly Task[],
   isCompleted: (habitId: string, date: string) => boolean,
