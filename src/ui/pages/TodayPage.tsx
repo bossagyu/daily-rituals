@@ -324,6 +324,8 @@ export function TodayPage() {
     : formatDisplayDate(selectedDate).split(' ')[0];
 
   return (
+    <div className="flex h-full flex-col">
+    <div className="flex-1 overflow-y-auto">
     <div className="mx-auto w-full max-w-2xl px-4 py-6">
       <header className="mb-6">
         <h1 className="text-2xl font-bold text-foreground">{pageTitle}</h1>
@@ -393,9 +395,13 @@ export function TodayPage() {
         </>
       )}
 
-      <div className="mt-4">
+    </div>
+    </div>
+    <div className="shrink-0 border-t border-border bg-background px-4 py-3">
+      <div className="mx-auto w-full max-w-2xl">
         <TaskInlineInput onAdd={(name) => void createTask({ name, dueDate: null })} />
       </div>
+    </div>
     </div>
   );
 }

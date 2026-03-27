@@ -30,11 +30,11 @@ export function AppLayout() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div className="flex h-dvh flex-col bg-background">
       <AppHeader user={user} onSignOut={signOut} />
-      <div className="flex flex-1">
+      <div className="flex min-h-0 flex-1">
         <SideNavigation onSignOut={handleSignOut} />
-        <main className="flex-1 overflow-auto">
+        <main className="flex-1 overflow-y-auto">
           <Outlet />
         </main>
       </div>
