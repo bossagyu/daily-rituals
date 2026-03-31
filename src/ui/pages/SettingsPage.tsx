@@ -1,3 +1,10 @@
+/**
+ * SettingsPage - App settings page with logout action and version display.
+ *
+ * Uses useAuthContext to obtain signOut. Logout requires a window.confirm
+ * confirmation before proceeding.
+ */
+
 import React from 'react';
 import { LogOut } from 'lucide-react';
 import { useAuthContext } from '@/hooks/useAuthContext';
