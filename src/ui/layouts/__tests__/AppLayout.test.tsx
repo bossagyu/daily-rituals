@@ -14,8 +14,6 @@ import '@testing-library/jest-dom/vitest';
 import { AppLayout } from '../AppLayout';
 
 // Mock useAuthContext to provide a test user
-const mockSignOut = vi.fn().mockResolvedValue(undefined);
-
 vi.mock('@/hooks/useAuthContext', () => ({
   useAuthContext: () => ({
     user: {
@@ -26,7 +24,7 @@ vi.mock('@/hooks/useAuthContext', () => ({
     isLoading: false,
     error: null,
     signIn: vi.fn(),
-    signOut: mockSignOut,
+    signOut: vi.fn(),
   }),
 }));
 
@@ -48,11 +46,6 @@ describe('AppLayout', () => {
     expect(screen.getByText('Daily Rituals')).toBeInTheDocument();
   });
 
-  it('renders the user display name in the header', () => {
-    renderWithRouter();
-    expect(screen.getByText('Test User')).toBeInTheDocument();
-  });
-
   it('renders Today navigation items', () => {
     renderWithRouter();
     const todayLinks = screen.getAllByText('Today');
@@ -65,11 +58,15 @@ describe('AppLayout', () => {
     expect(habitsLinks.length).toBeGreaterThanOrEqual(1);
   });
 
-  it('renders logout buttons in navigation', () => {
+  it('renders Settings navigation items', () => {
     renderWithRouter();
-    const logoutButtons = screen.getAllByText('ログアウト');
-    // At least one in side nav, one in bottom nav, one in header
-    expect(logoutButtons.length).toBeGreaterThanOrEqual(2);
+    const settingsLinks = screen.getAllByText('設定');
+    expect(settingsLinks.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('does not render logout buttons in navigation', () => {
+    renderWithRouter();
+    expect(screen.queryByText('ログアウト')).not.toBeInTheDocument();
   });
 
   it('renders navigation with correct roles', () => {
@@ -85,22 +82,5 @@ describe('AppLayout', () => {
     renderWithRouter();
     const main = screen.getByRole('main');
     expect(main).toBeInTheDocument();
-  });
-
-  it('returns null when user is not authenticated', () => {
-    // Override the mock for this test
-    vi.doMock('@/hooks/useAuthContext', () => ({
-      useAuthContext: () => ({
-        user: null,
-        isLoading: false,
-        error: null,
-        signIn: vi.fn(),
-        signOut: vi.fn(),
-      }),
-    }));
-
-    // Re-import with new mock - just test the existing mock user
-    // The null case is handled in the component but testing it
-    // requires module re-import which is complex in vitest
   });
 });
