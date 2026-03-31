@@ -6,14 +6,21 @@
 import { test, expect } from '../fixtures/base';
 
 test.describe('Sign Out', () => {
-  test('signs out and redirects to login', async ({ page }) => {
+  test('signs out via settings page and redirects to login', async ({ page }) => {
     await page.goto('/');
 
     // Wait for authenticated page to load
     await expect(page.getByRole('heading', { name: 'Today' })).toBeVisible();
 
+    // Navigate to settings
+    await page.getByRole('link', { name: /設定/ }).first().click();
+    await expect(page.getByRole('heading', { name: '設定' })).toBeVisible();
+
+    // Accept the confirmation dialog
+    page.on('dialog', (dialog) => dialog.accept());
+
     // Click logout
-    await page.getByRole('button', { name: /ログアウト/ }).first().click();
+    await page.getByRole('button', { name: /ログアウト/ }).click();
 
     // Should show login page
     await expect(
