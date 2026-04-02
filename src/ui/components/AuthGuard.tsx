@@ -8,7 +8,6 @@ type AuthGuardProps = {
   readonly isLoading: boolean;
   readonly error: string | null;
   readonly onSignIn: () => Promise<void>;
-  readonly onSignOut: () => Promise<void>;
   readonly children: React.ReactNode;
 };
 
@@ -31,7 +30,6 @@ export function AuthGuard({
   isLoading,
   error,
   onSignIn,
-  onSignOut,
   children,
 }: AuthGuardProps) {
   if (isLoading) {
@@ -44,7 +42,7 @@ export function AuthGuard({
 
   return (
     <div className="min-h-screen bg-background">
-      <AppHeader user={user} onSignOut={onSignOut} />
+      <AppHeader />
       <main>{children}</main>
     </div>
   );

@@ -19,26 +19,22 @@ import {
 import { useAuthContext } from '@/hooks/useAuthContext';
 
 export function AppLayout() {
-  const { user, signOut } = useAuthContext();
+  const { user } = useAuthContext();
 
   if (!user) {
     return null;
   }
 
-  const handleSignOut = () => {
-    void signOut();
-  };
-
   return (
     <div className="flex h-dvh flex-col bg-background">
-      <AppHeader user={user} onSignOut={signOut} />
+      <AppHeader />
       <div className="flex min-h-0 flex-1">
-        <SideNavigation onSignOut={handleSignOut} />
+        <SideNavigation />
         <main className="flex-1 overflow-y-auto">
           <Outlet />
         </main>
       </div>
-      <BottomNavigation onSignOut={handleSignOut} />
+      <BottomNavigation />
     </div>
   );
 }

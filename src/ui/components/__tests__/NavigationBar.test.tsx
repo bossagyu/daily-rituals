@@ -3,29 +3,23 @@
  */
 
 /**
- * NavigationBar tests - Verifies navigation items and logout button.
+ * NavigationBar tests - Verifies navigation items are rendered correctly.
  */
 
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import '@testing-library/jest-dom/vitest';
 import { SideNavigation, BottomNavigation } from '../NavigationBar';
 
 describe('SideNavigation', () => {
-  const mockSignOut = vi.fn();
-
   function renderSideNav() {
     return render(
       <MemoryRouter>
-        <SideNavigation onSignOut={mockSignOut} />
+        <SideNavigation />
       </MemoryRouter>,
     );
   }
-
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
 
   it('renders Today link', () => {
     renderSideNav();
@@ -37,15 +31,14 @@ describe('SideNavigation', () => {
     expect(screen.getByText('習慣一覧')).toBeInTheDocument();
   });
 
-  it('renders logout button', () => {
+  it('renders Settings link', () => {
     renderSideNav();
-    expect(screen.getByText('ログアウト')).toBeInTheDocument();
+    expect(screen.getByText('設定')).toBeInTheDocument();
   });
 
-  it('calls onSignOut when logout button is clicked', () => {
+  it('does not render logout button', () => {
     renderSideNav();
-    fireEvent.click(screen.getByText('ログアウト'));
-    expect(mockSignOut).toHaveBeenCalledOnce();
+    expect(screen.queryByText('ログアウト')).not.toBeInTheDocument();
   });
 
   it('renders navigation with accessible label', () => {
@@ -58,19 +51,13 @@ describe('SideNavigation', () => {
 });
 
 describe('BottomNavigation', () => {
-  const mockSignOut = vi.fn();
-
   function renderBottomNav() {
     return render(
       <MemoryRouter>
-        <BottomNavigation onSignOut={mockSignOut} />
+        <BottomNavigation />
       </MemoryRouter>,
     );
   }
-
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
 
   it('renders Today link', () => {
     renderBottomNav();
@@ -82,15 +69,14 @@ describe('BottomNavigation', () => {
     expect(screen.getByText('習慣一覧')).toBeInTheDocument();
   });
 
-  it('renders logout button', () => {
+  it('renders Settings link', () => {
     renderBottomNav();
-    expect(screen.getByText('ログアウト')).toBeInTheDocument();
+    expect(screen.getByText('設定')).toBeInTheDocument();
   });
 
-  it('calls onSignOut when logout button is clicked', () => {
+  it('does not render logout button', () => {
     renderBottomNav();
-    fireEvent.click(screen.getByText('ログアウト'));
-    expect(mockSignOut).toHaveBeenCalledOnce();
+    expect(screen.queryByText('ログアウト')).not.toBeInTheDocument();
   });
 
   it('renders navigation with accessible label', () => {
