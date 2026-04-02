@@ -37,15 +37,16 @@ test.describe('Task Feature', () => {
     await page.getByRole('button', { name: '追加' }).click();
     await expect(page.getByText('編集テスト')).toBeVisible({ timeout: 10000 });
 
-    // Click the task card to expand
-    const taskCard = page.locator('[data-testid="task-card"]').filter({ hasText: '編集テスト' });
-    await taskCard.click();
+    // Click the task name to expand (avoid clicking checkbox area)
+    await page.getByText('編集テスト').click();
 
-    // Edit the name via the aria-labelled input
-    const nameInput = taskCard.getByLabel('タスク名');
+    // Wait for expanded state — use testid to scope within the expanded card
+    const expandedCard = page.getByTestId('task-card');
+    const nameInput = expandedCard.getByRole('textbox', { name: 'タスク名' });
+    await expect(nameInput).toBeVisible({ timeout: 5000 });
     await nameInput.clear();
     await nameInput.fill('編集済みタスク');
-    await taskCard.getByRole('button', { name: '保存' }).click();
+    await expandedCard.getByRole('button', { name: '保存' }).click();
 
     await expect(page.getByText('編集済みタスク')).toBeVisible({ timeout: 5000 });
   });
@@ -59,10 +60,14 @@ test.describe('Task Feature', () => {
     await page.getByRole('button', { name: '追加' }).click();
     await expect(page.getByText('削除テスト')).toBeVisible({ timeout: 10000 });
 
-    // Click the task card to expand, then delete
-    const taskCard = page.locator('[data-testid="task-card"]').filter({ hasText: '削除テスト' });
-    await taskCard.click();
-    await taskCard.getByRole('button', { name: '削除' }).click();
+    // Click the task name to expand (avoid clicking checkbox area)
+    await page.getByText('削除テスト').click();
+
+    // Wait for expanded state — find delete button directly since hasText filter
+    // won't match the expanded card (text is in input value, not text content)
+    const deleteButton = page.getByRole('button', { name: '削除' });
+    await expect(deleteButton).toBeVisible({ timeout: 5000 });
+    await deleteButton.click();
 
     await expect(page.getByText('削除テスト')).not.toBeVisible({ timeout: 5000 });
   });
