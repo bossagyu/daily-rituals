@@ -22,7 +22,7 @@ test.describe('Today Page', () => {
     await page.goto('/');
 
     await expect(
-      page.getByText('今日やるべき習慣はありません'),
+      page.getByText('今日やるべきことはありません'),
     ).toBeVisible({ timeout: 10000 });
   });
 
