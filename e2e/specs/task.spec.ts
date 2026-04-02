@@ -37,9 +37,9 @@ test.describe('Task Feature', () => {
     await page.getByRole('button', { name: '追加' }).click();
     await expect(page.getByText('編集テスト')).toBeVisible({ timeout: 10000 });
 
-    // Click the task card to expand
+    // Click the task name to expand (avoid clicking checkbox area)
     const taskCard = page.locator('[data-testid="task-card"]').filter({ hasText: '編集テスト' });
-    await taskCard.click();
+    await taskCard.getByText('編集テスト').click();
 
     // Wait for expanded state with input to be visible
     const nameInput = taskCard.getByLabel('タスク名');
@@ -60,9 +60,9 @@ test.describe('Task Feature', () => {
     await page.getByRole('button', { name: '追加' }).click();
     await expect(page.getByText('削除テスト')).toBeVisible({ timeout: 10000 });
 
-    // Click the task card to expand, then delete
+    // Click the task name to expand (avoid clicking checkbox area)
     const taskCard = page.locator('[data-testid="task-card"]').filter({ hasText: '削除テスト' });
-    await taskCard.click();
+    await taskCard.getByText('削除テスト').click();
 
     // Wait for expanded state with delete button to be visible
     const deleteButton = taskCard.getByRole('button', { name: '削除' });
