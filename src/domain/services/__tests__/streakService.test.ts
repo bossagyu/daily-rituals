@@ -33,13 +33,13 @@ describe('calculateStreak - daily', () => {
 
   it('returns zero streak when there are no completions', () => {
     const result = calculateStreak(habit, [], '2025-03-10');
-    expect(result).toEqual({ current: 0, longest: 0 });
+    expect(result).toEqual({ current: 0, longest: 0, totalDays: 0 });
   });
 
   it('returns current:1 when only today is completed', () => {
     const completions = makeCompletions('habit-1', ['2025-03-10']);
     const result = calculateStreak(habit, completions, '2025-03-10');
-    expect(result).toEqual({ current: 1, longest: 1 });
+    expect(result).toEqual({ current: 1, longest: 1, totalDays: 1 });
   });
 
   it('counts consecutive days including today', () => {
@@ -50,7 +50,7 @@ describe('calculateStreak - daily', () => {
       '2025-03-10',
     ]);
     const result = calculateStreak(habit, completions, '2025-03-10');
-    expect(result).toEqual({ current: 4, longest: 4 });
+    expect(result).toEqual({ current: 4, longest: 4, totalDays: 4 });
   });
 
   it('counts consecutive days when today is not completed (streak from yesterday)', () => {
@@ -60,19 +60,19 @@ describe('calculateStreak - daily', () => {
       '2025-03-09',
     ]);
     const result = calculateStreak(habit, completions, '2025-03-10');
-    expect(result).toEqual({ current: 3, longest: 3 });
+    expect(result).toEqual({ current: 3, longest: 3, totalDays: 3 });
   });
 
   it('returns current:0 when yesterday is not completed and today is not completed', () => {
     const completions = makeCompletions('habit-1', ['2025-03-08']);
     const result = calculateStreak(habit, completions, '2025-03-10');
-    expect(result).toEqual({ current: 0, longest: 1 });
+    expect(result).toEqual({ current: 0, longest: 1, totalDays: 1 });
   });
 
   it('returns current:1 when yesterday is not completed but today is completed', () => {
     const completions = makeCompletions('habit-1', ['2025-03-08', '2025-03-10']);
     const result = calculateStreak(habit, completions, '2025-03-10');
-    expect(result).toEqual({ current: 1, longest: 1 });
+    expect(result).toEqual({ current: 1, longest: 1, totalDays: 2 });
   });
 
   it('tracks longest streak separately from current', () => {
@@ -88,7 +88,7 @@ describe('calculateStreak - daily', () => {
       '2025-03-10',
     ]);
     const result = calculateStreak(habit, completions, '2025-03-10');
-    expect(result).toEqual({ current: 2, longest: 5 });
+    expect(result).toEqual({ current: 2, longest: 5, totalDays: 7 });
   });
 
   it('handles unsorted completions correctly', () => {
@@ -98,7 +98,7 @@ describe('calculateStreak - daily', () => {
       '2025-03-09',
     ]);
     const result = calculateStreak(habit, completions, '2025-03-10');
-    expect(result).toEqual({ current: 3, longest: 3 });
+    expect(result).toEqual({ current: 3, longest: 3, totalDays: 3 });
   });
 
   it('handles duplicate completion dates', () => {
@@ -108,7 +108,7 @@ describe('calculateStreak - daily', () => {
       '2025-03-10',
     ]);
     const result = calculateStreak(habit, completions, '2025-03-10');
-    expect(result).toEqual({ current: 2, longest: 2 });
+    expect(result).toEqual({ current: 2, longest: 2, totalDays: 2 });
   });
 
   it('longest equals current when current is the best streak', () => {
@@ -118,7 +118,7 @@ describe('calculateStreak - daily', () => {
       '2025-03-10',
     ]);
     const result = calculateStreak(habit, completions, '2025-03-10');
-    expect(result).toEqual({ current: 3, longest: 3 });
+    expect(result).toEqual({ current: 3, longest: 3, totalDays: 3 });
   });
 });
 
@@ -130,7 +130,7 @@ describe('calculateStreak - weekly_days', () => {
 
   it('returns zero streak when there are no completions', () => {
     const result = calculateStreak(habit, [], '2025-03-10');
-    expect(result).toEqual({ current: 0, longest: 0 });
+    expect(result).toEqual({ current: 0, longest: 0, totalDays: 0 });
   });
 
   it('counts streak for consecutive target days completed', () => {
@@ -141,7 +141,7 @@ describe('calculateStreak - weekly_days', () => {
       '2025-03-10', // Mon
     ]);
     const result = calculateStreak(habit, completions, '2025-03-10');
-    expect(result).toEqual({ current: 3, longest: 3 });
+    expect(result).toEqual({ current: 3, longest: 3, totalDays: 3 });
   });
 
   it('breaks streak when a target day is missed', () => {
@@ -155,7 +155,7 @@ describe('calculateStreak - weekly_days', () => {
       '2025-03-10', // Mon (completed)
     ]);
     const result = calculateStreak(habit2, completions, '2025-03-10');
-    expect(result).toEqual({ current: 1, longest: 1 });
+    expect(result).toEqual({ current: 1, longest: 1, totalDays: 2 });
   });
 
   it('streak from last target day when today is not a target day', () => {
@@ -167,7 +167,7 @@ describe('calculateStreak - weekly_days', () => {
     ]);
     // Checking on Tuesday 2025-03-11
     const result = calculateStreak(habit, completions, '2025-03-11');
-    expect(result).toEqual({ current: 2, longest: 2 });
+    expect(result).toEqual({ current: 2, longest: 2, totalDays: 2 });
   });
 
   it('streak broken when most recent target day is missed', () => {
@@ -176,7 +176,7 @@ describe('calculateStreak - weekly_days', () => {
     const completions = makeCompletions('habit-1', ['2025-03-10']); // Mon
     const result = calculateStreak(habit, completions, '2025-03-13'); // Thu
     // Wed 3/12 was a target day that was missed
-    expect(result).toEqual({ current: 0, longest: 1 });
+    expect(result).toEqual({ current: 0, longest: 1, totalDays: 1 });
   });
 
   it('handles today being a target day but not completed', () => {
@@ -185,7 +185,7 @@ describe('calculateStreak - weekly_days', () => {
     const completions = makeCompletions('habit-1', ['2025-03-07']); // Fri
     const result = calculateStreak(habit, completions, '2025-03-10'); // Mon
     // Today is a target day but not completed yet - streak continues from last completed target day
-    expect(result).toEqual({ current: 1, longest: 1 });
+    expect(result).toEqual({ current: 1, longest: 1, totalDays: 1 });
   });
 
   it('tracks longest streak correctly', () => {
@@ -198,7 +198,7 @@ describe('calculateStreak - weekly_days', () => {
       '2025-03-10', // Mon
     ]);
     const result = calculateStreak(habit2, completions, '2025-03-10');
-    expect(result).toEqual({ current: 1, longest: 3 });
+    expect(result).toEqual({ current: 1, longest: 3, totalDays: 4 });
   });
 });
 
@@ -210,7 +210,7 @@ describe('calculateStreak - weekly_count', () => {
 
   it('returns zero streak when there are no completions', () => {
     const result = calculateStreak(habit, [], '2025-03-10');
-    expect(result).toEqual({ current: 0, longest: 0 });
+    expect(result).toEqual({ current: 0, longest: 0, totalDays: 0 });
   });
 
   it('counts consecutive weeks where target count was met', () => {
@@ -225,7 +225,7 @@ describe('calculateStreak - weekly_count', () => {
       '2025-03-12', // Wed
     ]);
     const result = calculateStreak(habit, completions, '2025-03-12');
-    expect(result).toEqual({ current: 2, longest: 2 });
+    expect(result).toEqual({ current: 2, longest: 2, totalDays: 6 });
   });
 
   it('current week counts if target is met', () => {
@@ -235,7 +235,7 @@ describe('calculateStreak - weekly_count', () => {
       '2025-03-12',
     ]);
     const result = calculateStreak(habit, completions, '2025-03-14');
-    expect(result).toEqual({ current: 1, longest: 1 });
+    expect(result).toEqual({ current: 1, longest: 1, totalDays: 3 });
   });
 
   it('current week does not count if target is not yet met, but streak continues from previous weeks', () => {
@@ -247,7 +247,7 @@ describe('calculateStreak - weekly_count', () => {
       '2025-03-10', // current week, only 1
     ]);
     const result = calculateStreak(habit, completions, '2025-03-10');
-    expect(result).toEqual({ current: 1, longest: 1 });
+    expect(result).toEqual({ current: 1, longest: 1, totalDays: 4 });
   });
 
   it('streak breaks when a week does not meet target count', () => {
@@ -266,7 +266,7 @@ describe('calculateStreak - weekly_count', () => {
       '2025-03-12',
     ]);
     const result = calculateStreak(habit, completions, '2025-03-12');
-    expect(result).toEqual({ current: 1, longest: 1 });
+    expect(result).toEqual({ current: 1, longest: 1, totalDays: 8 });
   });
 
   it('tracks longest streak correctly', () => {
@@ -292,7 +292,7 @@ describe('calculateStreak - weekly_count', () => {
       '2025-03-19',
     ]);
     const result = calculateStreak(habit, completions, '2025-03-19');
-    expect(result).toEqual({ current: 1, longest: 3 });
+    expect(result).toEqual({ current: 1, longest: 3, totalDays: 13 });
   });
 
   it('handles count of 1 (at least once per week)', () => {
@@ -302,7 +302,7 @@ describe('calculateStreak - weekly_count', () => {
       '2025-03-10',
     ]);
     const result = calculateStreak(habit1, completions, '2025-03-10');
-    expect(result).toEqual({ current: 2, longest: 2 });
+    expect(result).toEqual({ current: 2, longest: 2, totalDays: 2 });
   });
 });
 
@@ -316,7 +316,7 @@ describe('calculateStreak - edge cases', () => {
       makeCompletion('habit-1', '2025-03-10'),
     ];
     const result = calculateStreak(habit, completions, '2025-03-10');
-    expect(result).toEqual({ current: 1, longest: 1 });
+    expect(result).toEqual({ current: 1, longest: 1, totalDays: 1 });
   });
 
   it('longest is always >= current', () => {

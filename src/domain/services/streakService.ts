@@ -105,8 +105,10 @@ function calculateDailyStreak(
 ): Streak {
   const dateSet = buildCompletionDateSet(habitId, completions);
 
-  if (dateSet.size === 0) {
-    return Object.freeze({ current: 0, longest: 0 });
+  const totalDays = dateSet.size;
+
+  if (totalDays === 0) {
+    return Object.freeze({ current: 0, longest: 0, totalDays: 0 });
   }
 
   // Calculate current streak
@@ -134,7 +136,7 @@ function calculateDailyStreak(
 
   const longest = Math.max(current, ...runs);
 
-  return Object.freeze({ current, longest });
+  return Object.freeze({ current, longest, totalDays });
 }
 
 /**
@@ -171,9 +173,10 @@ function calculateWeeklyDaysStreak(
   targetDays: readonly number[],
 ): Streak {
   const dateSet = buildCompletionDateSet(habitId, completions);
+  const totalDays = dateSet.size;
 
-  if (dateSet.size === 0) {
-    return Object.freeze({ current: 0, longest: 0 });
+  if (totalDays === 0) {
+    return Object.freeze({ current: 0, longest: 0, totalDays: 0 });
   }
 
   // Get all dates from sorted completions to find the range
@@ -184,7 +187,7 @@ function calculateWeeklyDaysStreak(
   const allTargetDays = getTargetDaysBetween(earliestDate, today, targetDays);
 
   if (allTargetDays.length === 0) {
-    return Object.freeze({ current: 0, longest: 0 });
+    return Object.freeze({ current: 0, longest: 0, totalDays });
   }
 
   // For current streak: walk backwards from the most recent target day
@@ -234,7 +237,7 @@ function calculateWeeklyDaysStreak(
   // the current streak already accounts for skipping it
   const longest = Math.max(current, ...targetDayRuns, 0);
 
-  return Object.freeze({ current, longest });
+  return Object.freeze({ current, longest, totalDays });
 }
 
 /**
@@ -265,9 +268,10 @@ function calculateWeeklyCountStreak(
   targetCount: number,
 ): Streak {
   const dateSet = buildCompletionDateSet(habitId, completions);
+  const totalDays = dateSet.size;
 
-  if (dateSet.size === 0) {
-    return Object.freeze({ current: 0, longest: 0 });
+  if (totalDays === 0) {
+    return Object.freeze({ current: 0, longest: 0, totalDays: 0 });
   }
 
   const allDates = Array.from(dateSet).sort();
@@ -317,7 +321,7 @@ function calculateWeeklyCountStreak(
 
   longest = Math.max(longest, current);
 
-  return Object.freeze({ current, longest });
+  return Object.freeze({ current, longest, totalDays });
 }
 
 /**

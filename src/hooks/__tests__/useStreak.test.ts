@@ -46,7 +46,7 @@ describe('computeStreakForHabit', () => {
 
       const streak = computeStreakForHabit(habit, [], TODAY);
 
-      expect(streak).toEqual({ current: 0, longest: 0 });
+      expect(streak).toEqual({ current: 0, longest: 0, totalDays: 0 });
     });
 
     it('returns streak for consecutive daily completions', () => {
@@ -59,7 +59,7 @@ describe('computeStreakForHabit', () => {
 
       const streak = computeStreakForHabit(habit, completions, TODAY);
 
-      expect(streak).toEqual({ current: 3, longest: 3 });
+      expect(streak).toEqual({ current: 3, longest: 3, totalDays: 3 });
     });
 
     it('handles broken streak', () => {
@@ -120,7 +120,7 @@ describe('computeStreakForHabit', () => {
 
       const streak = computeStreakForHabit(habit, [], TODAY);
 
-      expect(streak).toEqual({ current: 0, longest: 0 });
+      expect(streak).toEqual({ current: 0, longest: 0, totalDays: 0 });
     });
   });
 
@@ -144,7 +144,7 @@ describe('computeStreakForHabit', () => {
 
       const streak = computeStreakForHabit(habit, [], TODAY);
 
-      expect(streak).toEqual({ current: 0, longest: 0 });
+      expect(streak).toEqual({ current: 0, longest: 0, totalDays: 0 });
     });
   });
 });

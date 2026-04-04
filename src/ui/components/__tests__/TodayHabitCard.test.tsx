@@ -22,7 +22,7 @@ const baseHabit: Habit = {
 
 const defaultProps = {
   isCompleted: false,
-  streak: { current: 0, longest: 0 },
+  streak: { current: 0, longest: 0, totalDays: 0 },
   weeklyProgress: { done: 0, target: 7 },
   onToggle: vi.fn(),
 };
