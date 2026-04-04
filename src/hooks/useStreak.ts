@@ -44,7 +44,7 @@ export type UseStreakResult = {
   readonly refreshStreak: (habitId: string) => Promise<void>;
 };
 
-const EMPTY_STREAK: Streak = Object.freeze({ current: 0, longest: 0 });
+const EMPTY_STREAK: Streak = Object.freeze({ current: 0, longest: 0, totalDays: 0 });
 const EMPTY_PROGRESS: WeeklyProgress = Object.freeze({ done: 0, target: 0 });
 
 export function useStreak(

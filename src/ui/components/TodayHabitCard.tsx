@@ -61,9 +61,14 @@ export function TodayHabitCard({
         </span>
 
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          {streak.current > 0 && (
+          {streak.current > 0 && streak.totalDays > 0 && (
             <span className="font-medium text-primary">
-              {streak.current}日連続
+              {streak.current}日連続 / 計{streak.totalDays}日
+            </span>
+          )}
+          {streak.current === 0 && streak.totalDays > 0 && (
+            <span className="font-medium text-primary">
+              計{streak.totalDays}日
             </span>
           )}
           {habit.frequency.type === 'weekly_count' && (

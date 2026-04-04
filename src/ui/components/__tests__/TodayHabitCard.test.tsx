@@ -22,7 +22,7 @@ const baseHabit: Habit = {
 
 const defaultProps = {
   isCompleted: false,
-  streak: { current: 0, longest: 0 },
+  streak: { current: 0, longest: 0, totalDays: 0 },
   weeklyProgress: { done: 0, target: 7 },
   onToggle: vi.fn(),
 };
@@ -51,6 +51,41 @@ describe('TodayHabitCard', () => {
       <TodayHabitCard habit={habitWithReminder} {...defaultProps} />,
     );
     expect(screen.getByText(/通知/)).toBeInTheDocument();
+  });
+
+  it('shows streak and total days when both current > 0 and totalDays > 0', () => {
+    render(
+      <TodayHabitCard
+        habit={baseHabit}
+        {...defaultProps}
+        streak={{ current: 3, longest: 5, totalDays: 10 }}
+      />,
+    );
+    expect(screen.getByText('3日連続 / 計10日')).toBeInTheDocument();
+  });
+
+  it('shows only total days when current is 0 but totalDays > 0', () => {
+    render(
+      <TodayHabitCard
+        habit={baseHabit}
+        {...defaultProps}
+        streak={{ current: 0, longest: 5, totalDays: 10 }}
+      />,
+    );
+    expect(screen.getByText('計10日')).toBeInTheDocument();
+    expect(screen.queryByText(/日連続/)).not.toBeInTheDocument();
+  });
+
+  it('shows nothing when both current and totalDays are 0', () => {
+    render(
+      <TodayHabitCard
+        habit={baseHabit}
+        {...defaultProps}
+        streak={{ current: 0, longest: 0, totalDays: 0 }}
+      />,
+    );
+    expect(screen.queryByText(/日連続/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/計.*日/)).not.toBeInTheDocument();
   });
 
   it('disables checkbox when disabled is true', () => {
