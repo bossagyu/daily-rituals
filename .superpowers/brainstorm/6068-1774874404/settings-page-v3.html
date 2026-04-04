@@ -1,0 +1,55 @@
+<h2>設定ページ: 最終版</h2>
+<p class="subtitle">統一されたスタイル、余計な説明なし</p>
+
+<div class="mockup" style="max-width:400px;margin:0 auto;">
+  <div class="mockup-header">設定ページ - モバイル表示</div>
+  <div class="mockup-body" style="padding:0;background:#0a0a0a;color:#fafafa;min-height:350px;">
+    <!-- Page title -->
+    <div style="padding:24px 16px 8px;">
+      <h2 style="font-size:20px;font-weight:700;margin:0;">設定</h2>
+    </div>
+
+    <!-- Settings list -->
+    <div style="padding:8px 16px;">
+      <!-- Theme toggle -->
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid #27272a;">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <span style="font-size:18px;">🌙</span>
+          <div>
+            <div style="font-size:14px;font-weight:500;">テーマ</div>
+            <div style="font-size:12px;color:#a1a1aa;">ダークモード</div>
+          </div>
+        </div>
+        <div style="width:44px;height:24px;background:#3b82f6;border-radius:12px;position:relative;cursor:pointer;">
+          <div style="width:20px;height:20px;background:white;border-radius:50%;position:absolute;top:2px;right:2px;"></div>
+        </div>
+      </div>
+
+      <!-- Logout -->
+      <div style="display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid #27272a;cursor:pointer;">
+        <span style="font-size:18px;">🚪</span>
+        <div style="font-size:14px;font-weight:500;">ログアウト</div>
+      </div>
+    </div>
+
+    <!-- Version info -->
+    <div style="padding:24px 16px;text-align:center;">
+      <span style="font-size:12px;color:#52525b;">Daily Rituals v1.0.0</span>
+    </div>
+  </div>
+</div>
+
+<div class="options" style="margin-top:16px;">
+  <div class="option" data-choice="ok" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>これで確定</h3>
+    </div>
+  </div>
+  <div class="option" data-choice="adjust" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>まだ調整したい</h3>
+    </div>
+  </div>
+</div>

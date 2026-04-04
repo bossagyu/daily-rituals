@@ -1,0 +1,101 @@
+<h2>ナビゲーション改善: Before → After</h2>
+<p class="subtitle">ヘッダー・フッター・サイドナビの変更点を確認してください</p>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">Before（現在）- モバイル</div>
+    <div class="mockup-body" style="padding:0;display:flex;flex-direction:column;height:400px;background:#0a0a0a;color:#fafafa;">
+      <!-- Header -->
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid #27272a;">
+        <span style="font-weight:600;font-size:16px;">Daily Rituals</span>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <span style="font-size:12px;color:#a1a1aa;">kouhei</span>
+          <button style="background:transparent;border:1px solid #3f3f46;color:#fafafa;padding:4px 10px;border-radius:6px;font-size:12px;">ログアウト</button>
+        </div>
+      </div>
+      <!-- Content -->
+      <div style="flex:1;display:flex;align-items:center;justify-content:center;color:#71717a;font-size:14px;">
+        コンテンツ
+      </div>
+      <!-- Bottom Nav -->
+      <div style="display:flex;border-top:1px solid #27272a;background:#0a0a0a;">
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 0;color:#3b82f6;">
+          <span style="font-size:16px;">📅</span>
+          <span style="font-size:10px;font-weight:500;">Today</span>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 0;color:#a1a1aa;">
+          <span style="font-size:16px;">📆</span>
+          <span style="font-size:10px;">カレンダー</span>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 0;color:#a1a1aa;">
+          <span style="font-size:16px;">📋</span>
+          <span style="font-size:10px;">習慣一覧</span>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 0;color:#ef4444;">
+          <span style="font-size:16px;">🚪</span>
+          <span style="font-size:10px;">ログアウト</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header">After（改善後）- モバイル</div>
+    <div class="mockup-body" style="padding:0;display:flex;flex-direction:column;height:400px;background:#0a0a0a;color:#fafafa;">
+      <!-- Header - simplified -->
+      <div style="display:flex;justify-content:center;align-items:center;padding:12px 16px;border-bottom:1px solid #27272a;">
+        <span style="font-weight:600;font-size:16px;">Daily Rituals</span>
+      </div>
+      <!-- Content -->
+      <div style="flex:1;display:flex;align-items:center;justify-content:center;color:#71717a;font-size:14px;">
+        コンテンツ
+      </div>
+      <!-- Bottom Nav -->
+      <div style="display:flex;border-top:1px solid #27272a;background:#0a0a0a;">
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 0;color:#3b82f6;">
+          <span style="font-size:16px;">📅</span>
+          <span style="font-size:10px;font-weight:500;">Today</span>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 0;color:#a1a1aa;">
+          <span style="font-size:16px;">📆</span>
+          <span style="font-size:10px;">カレンダー</span>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 0;color:#a1a1aa;">
+          <span style="font-size:16px;">📋</span>
+          <span style="font-size:10px;">習慣一覧</span>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 0;color:#a1a1aa;">
+          <span style="font-size:16px;">⚙️</span>
+          <span style="font-size:10px;">設定</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top:24px;">
+  <h3>変更点まとめ</h3>
+  <ul style="line-height:1.8;">
+    <li>❌ ヘッダーからユーザー名・ログアウトボタンを削除 → アプリ名のみに</li>
+    <li>❌ ボトムナビからログアウトを削除</li>
+    <li>✅ ボトムナビに「設定」タブ（⚙️）を追加</li>
+    <li>✅ ログアウトは設定ページ内に移動</li>
+  </ul>
+</div>
+
+<div class="options" style="margin-top:16px;">
+  <div class="option" data-choice="ok" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>この方向でOK</h3>
+      <p>ナビゲーション構成はこれで進める</p>
+    </div>
+  </div>
+  <div class="option" data-choice="adjust" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>調整したい</h3>
+      <p>配置や項目を変更したい</p>
+    </div>
+  </div>
+</div>
