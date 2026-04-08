@@ -20,6 +20,9 @@ export { streakSchema } from './streak';
 export type { Task, CreateTaskInput, UpdateTaskInput } from './task';
 export { taskSchema, TASK_NAME_MAX_LENGTH } from './task';
 
+export type { Reward, CreateRewardInput, UpdateRewardInput } from './reward';
+export { rewardSchema, REWARD_DESCRIPTION_MAX_LENGTH } from './reward';
+
 export type { HabitFormState, FrequencyType, ValidationResult } from './habitFormValidation';
 export {
   validateHabitForm,
