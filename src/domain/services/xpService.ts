@@ -15,6 +15,9 @@ export type XpBreakdown = {
   readonly streakBonus: number;
   readonly allCompleteBonus: number;
   readonly totalXp: number;
+  readonly level: number;
+  readonly currentXp: number;
+  readonly requiredXp: number;
 };
 
 // --- Constants ---
@@ -164,10 +167,16 @@ export function calculateTotalXp(
   const streakBonus = calculateStreakBonuses(completionsByHabitId, habits);
   const allCompleteBonus = calculateAllCompleteBonuses(habits, completions, startDate, endDate);
 
+  const totalXp = basicXp + streakBonus + allCompleteBonus;
+  const levelInfo = calculateLevel(totalXp);
+
   return Object.freeze({
     basicXp,
     streakBonus,
     allCompleteBonus,
-    totalXp: basicXp + streakBonus + allCompleteBonus,
+    totalXp,
+    level: levelInfo.level,
+    currentXp: levelInfo.currentXp,
+    requiredXp: levelInfo.requiredXp,
   });
 }

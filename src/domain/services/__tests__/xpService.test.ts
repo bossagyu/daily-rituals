@@ -138,6 +138,13 @@ describe('calculateStreakBonuses', () => {
     expect(calculateStreakBonuses(completions, habits)).toBe(5);
   });
 
+  it('returns 9 XP for 21 days streak (2+3+4)', () => {
+    const habits = [makeHabit()];
+    const dates = makeDateRange('2026-01-01', 21);
+    const completions = new Map([['habit-1', dates]]);
+    expect(calculateStreakBonuses(completions, habits)).toBe(9);
+  });
+
   it('returns 14 XP for 28 days streak (2+3+4+5)', () => {
     const habits = [makeHabit()];
     const dates = makeDateRange('2026-01-01', 28);
@@ -309,6 +316,9 @@ describe('calculateTotalXp', () => {
     expect(result.streakBonus).toBe(2);
     expect(result.allCompleteBonus).toBe(14); // 7 days * 2
     expect(result.totalXp).toBe(23); // 7 + 2 + 14
+    expect(result.level).toBe(2);
+    expect(result.currentXp).toBe(13); // 23 - 10 (Lv.1->2) = 13 remaining
+    expect(result.requiredXp).toBe(15); // Lv.2->3 needs 15
   });
 
   it('returns Object.freeze result', () => {
@@ -319,12 +329,11 @@ describe('calculateTotalXp', () => {
   it('returns zero breakdown when no completions', () => {
     const habit = makeHabit({ id: 'h1' });
     const result = calculateTotalXp([habit], [], '2026-01-01', '2026-01-07');
-    expect(result).toEqual({
-      basicXp: 0,
-      streakBonus: 0,
-      allCompleteBonus: 0,
-      totalXp: 0,
-    });
+    expect(result.basicXp).toBe(0);
+    expect(result.streakBonus).toBe(0);
+    expect(result.allCompleteBonus).toBe(0);
+    expect(result.totalXp).toBe(0);
+    expect(result.level).toBe(1);
   });
 
   it('counts all completions for basic XP including weekly_count', () => {
