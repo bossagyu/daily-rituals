@@ -46,7 +46,7 @@
 
 ### 全完了ボーナスの詳細定義
 
-- **判定基準:** その日のdue習慣（`isDueOnDate` が true の習慣）がすべて完了した日ごとに+2XP
+- **判定基準:** その日のdue習慣（`calendarService.ts` の `isHabitDueOnDate` が true の習慣、すなわち `weekly_count` を除外）がすべて完了した日ごとに+2XP
 - **`weekly_count` の扱い:** `weekly_count` 習慣はdue判定の対象外であり、completedCount にも含めない。完了判定は「due習慣の完了数 = due習慣の数」で行う
 - **注意:** 既存の `calculateDailyAchievements` の `completedCount` は `weekly_count` 完了も含んでいるため、全完了ボーナス判定用には due習慣のみの完了数を別途計算する必要がある
 
@@ -63,7 +63,7 @@ XPは全期間のcompletionsから算出する：
 completionsデータから各daily習慣の「ストリーク区間」を抽出する：
 1. 各daily習慣のcompletionsを日付順にソート
 2. 連続する日付のグループ（ストリーク区間）を特定
-3. 各区間の日数から週ボーナスを計算（1週目+2, 2週目+3, 3週目+4, 4週目以降+5）
+3. 各区間の日数から週ボーナスを計算（1週目+2, 2週目+3, 3週目+4, 4週目+5, 5週目以降+5固定）
 4. 全区間のボーナスを合算
 
 これは `xpService.ts` 内の純粋関数として実装する。既存の `streakService` は現在のストリークのみ返すため、過去の全ストリーク区間を扱う新しいロジックが必要。
@@ -282,7 +282,7 @@ Lv.9 → Lv.10
 | ファイル | 責務 |
 |---------|------|
 | `supabase/migrations/YYYYMMDD_add_rewards.sql` | DBマイグレーション |
-| `src/domain/services/xpService.ts` | XP計算、レベル計算、ストリークボーナス計算（純粋関数）。内部で `streakService.calculateStreak` と `calendarService.calculateDailyAchievements` を利用 |
+| `src/domain/services/xpService.ts` | XP計算、レベル計算、ストリークボーナス計算（純粋関数）。completionsから独自にストリーク区間を抽出。`calendarService` の `isHabitDueOnDate` ロジックを利用 |
 | `src/domain/models/reward.ts` | Reward型 + Zodスキーマ + CreateRewardInput / UpdateRewardInput |
 | `src/data/repositories/rewardRepository.ts` | RewardRepository インターフェース |
 | `src/data/repositories/supabaseRewardRepository.ts` | Supabase実装 |
@@ -306,7 +306,7 @@ Lv.9 → Lv.10
 
 - `xpService.ts`:
   - 基本XP計算（completions数）
-  - ストリークボーナス計算（daily習慣のみ、`floor(currentStreak / 7) × 3`）
+  - ストリークボーナス計算（daily習慣のみ、7日連続ごとに+2/+3/+4/+5、5週目以降+5固定、確定ボーナスの積み上げ）
   - 全完了ボーナス計算（`rate >= 1.0` の日数 × 2、weekly_count除外の確認）
   - レベル計算（累計XPからレベル・進捗を逆算）
   - レベル50以降の必要XP上限（255固定）
