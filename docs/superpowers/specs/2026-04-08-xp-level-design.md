@@ -18,34 +18,61 @@
 | アクション | XP | 条件 |
 |-----------|-----|------|
 | 習慣1つ完了 | +1 XP | 習慣のcompletionが1件追加されるごとに |
-| ストリークボーナス | +3 XP | 習慣ごとに暦日7日連続達成ごとに付与（daily習慣のみ対象） |
-| 全完了ボーナス | +2 XP | その日のdaily + weekly_days 習慣がすべて完了した日ごとに（weekly_countは判定から除外） |
+| ストリークボーナス | +2〜5 XP | 習慣ごとに連続7日達成ごとに付与（daily習慣のみ対象）。週数に応じて増加 |
+| 全完了ボーナス | +2 XP | その日のdue習慣（daily + weekly_days）がすべて完了した日ごとに |
 
 ### ストリークボーナスの詳細定義
 
 - **対象:** `daily` 頻度の習慣のみ。`weekly_days` と `weekly_count` は対象外
-- **計算:** 各習慣の現在の連続達成日数から `floor(currentStreak / 7) × 3` で算出
-- **例:** 読書が14日連続 → `floor(14/7) × 3 = 6XP`。運動（weekly_days）が10日連続 → 対象外、0XP
+- **計算:** 7日連続達成ごとにボーナスが確定。一度確定したボーナスはストリークが途切れても失われない
+- **週数に応じた増加（上限あり）:**
+
+| 連続週 | ボーナス | 累計 |
+|--------|---------|------|
+| 1週目（7日） | +2 XP | 2 |
+| 2週目（14日） | +3 XP | 5 |
+| 3週目（21日） | +4 XP | 9 |
+| 4週目（28日） | +5 XP | 14 |
+| 5週目以降 | +5 XP | +5ずつ |
+
+- **例:** 読書が21日連続 → 途切れ → 14日連続
+  - 21日連続分: 2+3+4 = 9XP（確定、失われない）
+  - 14日連続分: 2+3 = 5XP（確定）
+  - 合計ストリークボーナス: **14XP**
+- **サボり防止:** 週数に応じてボーナスが増加するため、途中でサボって再スタートするより続けた方が常に有利
+  - 28日連続: 2+3+4+5 = **14 XP**
+  - 14日→サボリ→14日: (2+3)×2 = **10 XP** → 続けた方が得 ✓
 - **全習慣の合計:** 各daily習慣のストリークボーナスを合算
 
 ### 全完了ボーナスの詳細定義
 
-- **判定基準:** 既存の `calculateDailyAchievements` を再利用。`targetCount > 0 && completedCount >= targetCount` の日を「全完了」とする
-- `weekly_count` 習慣は `targetCount` に含まれないため、判定から自然に除外される
+- **判定基準:** その日のdue習慣（`isDueOnDate` が true の習慣）がすべて完了した日ごとに+2XP
+- **`weekly_count` の扱い:** `weekly_count` 習慣はdue判定の対象外であり、completedCount にも含めない。完了判定は「due習慣の完了数 = due習慣の数」で行う
+- **注意:** 既存の `calculateDailyAchievements` の `completedCount` は `weekly_count` 完了も含んでいるため、全完了ボーナス判定用には due習慣のみの完了数を別途計算する必要がある
 
 ### XP計算ロジック（純粋関数）
 
 XPは全期間のcompletionsから算出する：
 
 1. **基本XP** = 全completions数
-2. **ストリークボーナス** = 各daily習慣の `floor(currentStreak / 7) × 3` の合計
-3. **全完了ボーナス** = `calculateDailyAchievements` で `rate >= 1.0` の日数 × 2XP
+2. **ストリークボーナス** = 各daily習慣の全ストリーク区間のボーナス合計（確定済み分の積み上げ）
+3. **全完了ボーナス** = due習慣がすべて完了した日数 × 2XP（weekly_count完了を除外して判定）
+
+### ストリークボーナスの計算方法
+
+completionsデータから各daily習慣の「ストリーク区間」を抽出する：
+1. 各daily習慣のcompletionsを日付順にソート
+2. 連続する日付のグループ（ストリーク区間）を特定
+3. 各区間の日数から週ボーナスを計算（1週目+2, 2週目+3, 3週目+4, 4週目以降+5）
+4. 全区間のボーナスを合算
+
+これは `xpService.ts` 内の純粋関数として実装する。既存の `streakService` は現在のストリークのみ返すため、過去の全ストリーク区間を扱う新しいロジックが必要。
 
 ### データ取得
 
 - completions: 既存の `findByDateRange` で最古の習慣の `created_at` から今日までの範囲で取得（`findAll` は新設しない）
 - habits: 既存の `findAll` + `findArchived` で取得
-- 各日の達成率: `calculateDailyAchievements` を再利用
+- 全完了判定: due習慣のみの完了数を計算（`calculateDailyAchievements` の `targetCount` を再利用しつつ、`completedCount` はdue習慣のみに限定）
 
 ### パフォーマンス考慮
 
@@ -128,6 +155,17 @@ type UpdateRewardInput = {
 };
 ```
 
+### Repository Interface
+
+```typescript
+type RewardRepository = {
+  readonly findAll: () => Promise<Reward[]>;
+  readonly create: (input: CreateRewardInput) => Promise<Reward>;
+  readonly update: (id: string, input: UpdateRewardInput) => Promise<Reward>;
+  readonly remove: (id: string) => Promise<void>;
+};
+```
+
 ### Migration SQL
 
 ```sql
@@ -172,6 +210,11 @@ CREATE TRIGGER rewards_updated_at_trigger
 - 新規追加: レベル番号（整数、1以上）+ ご褒美テキスト（1〜200文字、trim処理）
 - 同じレベルに既にご褒美がある場合はエラーメッセージ表示
 - 編集・削除
+- ページ上部に「← カレンダーに戻る」リンク
+
+**ナビゲーション導線:**
+- `/rewards` はナビゲーションバーには追加しない（カレンダーページのレベル表示タップのみがアクセス手段）
+- ブラウザの戻るボタンまたはページ内の「← カレンダーに戻る」リンクでCalendarPageに戻る
 
 ## Calendar Page UI Changes
 
