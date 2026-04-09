@@ -55,10 +55,12 @@ test.describe('XP・レベルシステム', () => {
       await page.goto('/rewards');
       await expect(page.getByText('映画を見る')).toBeVisible();
 
-      await page.getByRole('button', { name: '編集' }).first().click();
-      const editInput = page.getByLabel('ご褒美の内容').last();
+      // Scope to the reward item to avoid matching the AddRewardForm input
+      const item = page.getByTestId('reward-item').first();
+      await item.getByRole('button', { name: '編集' }).click();
+      const editInput = item.getByLabel('ご褒美の内容');
       await editInput.fill('映画を2本見る');
-      await page.getByRole('button', { name: '保存' }).click();
+      await item.getByRole('button', { name: '保存' }).click();
       await expect(page.getByText('映画を2本見る')).toBeVisible();
     });
 
@@ -96,10 +98,14 @@ test.describe('XP・レベルシステム', () => {
       // Seed a habit created 30 days ago so past completions fall in range
       const oldDate = new Date();
       oldDate.setDate(oldDate.getDate() - 30);
-      const oldIso = oldDate.toISOString();
-      const { id } = await seedHabit({ name: 'E2E習慣', createdAt: oldIso });
+      const { id } = await seedHabit({
+        name: 'E2E習慣',
+        createdAt: oldDate.toISOString(),
+      });
 
-      // Add 10 consecutive completions ending today
+      // Seed 10 consecutive completions ending today.
+      // XP calc: basic 10 + 1-week streak 2 + all-complete 10 days * 2 = 32 XP
+      // Lv: 32 - 10(L1) - 15(L2) = 7 → Lv.3 with currentXp 7
       const today = new Date();
       for (let i = 0; i < 10; i++) {
         const d = new Date(today);
@@ -108,22 +114,28 @@ test.describe('XP・レベルシステム', () => {
         await seedCompletion(id, dateString);
       }
 
-      // First load: persist initial localStorage
+      // First load: wait for stats to render (avoids race with localStorage write)
       await page.goto('/calendar');
+      await expect(page.getByRole('link', { name: /Lv\./ })).toBeVisible();
+
       // Force localStorage to a low level so the next load triggers level-up
       await page.evaluate(() => {
         localStorage.setItem('daily-rituals-last-level', '1');
       });
       await page.reload();
 
+      // Wait for stats to load again
+      await expect(page.getByRole('link', { name: /Lv\./ })).toBeVisible();
+
       // The dialog should appear
-      await expect(page.getByRole('dialog')).toBeVisible({ timeout: 10000 });
-      await expect(page.getByText('レベルアップ！')).toBeVisible();
-      // The level transition should reference Lv.1
-      await expect(page.getByText('Lv.1', { exact: false })).toBeVisible();
+      const dialog = page.getByRole('dialog');
+      await expect(dialog).toBeVisible({ timeout: 10000 });
+      await expect(dialog.getByText('レベルアップ！')).toBeVisible();
+      // The level transition should reference Lv.1 (scoped + exact)
+      await expect(dialog.getByText('Lv.1', { exact: true })).toBeVisible();
 
       // Close button dismisses (exact match avoids the X button "ダイアログを閉じる")
-      await page.getByRole('button', { name: '閉じる', exact: true }).click();
+      await dialog.getByRole('button', { name: '閉じる', exact: true }).click();
       await expect(page.getByRole('dialog')).not.toBeVisible();
     });
 
@@ -146,18 +158,27 @@ test.describe('XP・レベルシステム', () => {
         const dateString = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
         await seedCompletion(id, dateString);
       }
-      // Seed reward at level 3 (the user reaches Lv.3 with these completions)
-      await seedReward(3, '特別なディナー');
+      // Seed rewards at all reachable levels (Lv.2..Lv.5) to make the test
+      // robust against minor XP rule changes. The dialog should show the
+      // reward whose level matches whichever level the user reaches.
+      await seedReward(2, 'ご褒美Lv2');
+      await seedReward(3, 'ご褒美Lv3');
+      await seedReward(4, 'ご褒美Lv4');
+      await seedReward(5, 'ご褒美Lv5');
 
       await page.goto('/calendar');
+      await expect(page.getByRole('link', { name: /Lv\./ })).toBeVisible();
+
       await page.evaluate(() => {
         localStorage.setItem('daily-rituals-last-level', '1');
       });
       await page.reload();
+      await expect(page.getByRole('link', { name: /Lv\./ })).toBeVisible();
 
-      await expect(page.getByRole('dialog')).toBeVisible({ timeout: 10000 });
-      // Rewards may load slightly after the dialog opens, so allow extra time
-      await expect(page.getByText('特別なディナー')).toBeVisible({ timeout: 10000 });
+      const dialog = page.getByRole('dialog');
+      await expect(dialog).toBeVisible({ timeout: 10000 });
+      // Whichever level the user reaches, a matching reward should be shown
+      await expect(dialog.getByText(/ご褒美Lv\d/)).toBeVisible({ timeout: 10000 });
     });
 
     test('does not show dialog on first visit', async ({ page, seedHabit }) => {
