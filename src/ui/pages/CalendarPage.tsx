@@ -9,8 +9,11 @@ import React, { useMemo } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useRepositories } from '@/hooks/useRepositories';
 import { useCalendarData } from '@/hooks/useCalendarData';
+import { useStatsData } from '@/hooks/useStatsData';
 import { HeatmapCalendar } from '@/ui/components/HeatmapCalendar';
 import { HabitFilter } from '@/ui/components/HabitFilter';
+import { LevelBar } from '@/ui/components/LevelBar';
+import { WeeklyMonthlyStats } from '@/ui/components/WeeklyMonthlyStats';
 import { Button } from '@/components/ui/button';
 
 // --- Sub-components ---
@@ -104,6 +107,8 @@ export function CalendarPage() {
     setFilter,
   } = useCalendarData(habitRepository, completionRepository);
 
+  const stats = useStatsData(habitRepository, completionRepository);
+
   const selectedHabitColor = useMemo(() => {
     if (filter.mode !== 'habit') return undefined;
     const habit = allHabits.find((h) => h.id === filter.habitId);
@@ -115,6 +120,17 @@ export function CalendarPage() {
       <header className="mb-6">
         <h1 className="text-2xl font-bold text-foreground">カレンダー</h1>
       </header>
+
+      {stats.xp && stats.weekly && stats.monthly && (
+        <div className="mb-6 space-y-3">
+          <LevelBar
+            level={stats.xp.level}
+            currentXp={stats.xp.currentXp}
+            requiredXp={stats.xp.requiredXp}
+          />
+          <WeeklyMonthlyStats weekly={stats.weekly} monthly={stats.monthly} />
+        </div>
+      )}
 
       <MonthNavigationHeader
         year={year}
