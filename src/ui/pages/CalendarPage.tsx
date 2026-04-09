@@ -5,16 +5,19 @@
  * Uses useCalendarData hook for data management and useRepositories for data access.
  */
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useRepositories } from '@/hooks/useRepositories';
 import { useCalendarData } from '@/hooks/useCalendarData';
 import { useStatsData } from '@/hooks/useStatsData';
+import { useLevelUpDetection } from '@/hooks/useLevelUpDetection';
 import { HeatmapCalendar } from '@/ui/components/HeatmapCalendar';
 import { HabitFilter } from '@/ui/components/HabitFilter';
 import { LevelBar } from '@/ui/components/LevelBar';
 import { WeeklyMonthlyStats } from '@/ui/components/WeeklyMonthlyStats';
+import { LevelUpDialog } from '@/ui/components/LevelUpDialog';
 import { Button } from '@/components/ui/button';
+import type { Reward } from '@/domain/models';
 
 // --- Sub-components ---
 
@@ -90,7 +93,8 @@ function MonthNavigationHeader({
 // --- Main Page ---
 
 export function CalendarPage() {
-  const { habitRepository, completionRepository } = useRepositories();
+  const { habitRepository, completionRepository, rewardRepository } =
+    useRepositories();
 
   const {
     year,
@@ -108,6 +112,32 @@ export function CalendarPage() {
   } = useCalendarData(habitRepository, completionRepository);
 
   const stats = useStatsData(habitRepository, completionRepository);
+  const levelUp = useLevelUpDetection(stats.xp?.level ?? null);
+
+  // Load rewards once so we can look up the reward for the new level
+  const [rewards, setRewards] = useState<readonly Reward[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    void rewardRepository
+      .findAll()
+      .then((data) => {
+        if (!cancelled) setRewards(data);
+      })
+      .catch(() => {
+        // Silently ignore — the dialog just won't show a reward
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [rewardRepository]);
+
+  const rewardForNewLevel = useMemo(() => {
+    if (levelUp.event === null) return null;
+    return (
+      rewards.find((r) => r.level === levelUp.event!.newLevel)?.description ??
+      null
+    );
+  }, [levelUp.event, rewards]);
 
   const selectedHabitColor = useMemo(() => {
     if (filter.mode !== 'habit') return undefined;
@@ -174,6 +204,14 @@ export function CalendarPage() {
           onFilterChange={setFilter}
         />
       </div>
+
+      <LevelUpDialog
+        open={levelUp.event !== null}
+        previousLevel={levelUp.event?.previousLevel ?? 0}
+        newLevel={levelUp.event?.newLevel ?? 0}
+        rewardDescription={rewardForNewLevel}
+        onClose={levelUp.dismiss}
+      />
     </div>
   );
 }
