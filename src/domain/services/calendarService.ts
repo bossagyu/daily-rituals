@@ -92,7 +92,7 @@ export type DayAchievement = {
   readonly isTargetDay: boolean;
 };
 
-function isHabitActiveOnDate(habit: Habit, date: string): boolean {
+export function isHabitActiveOnDate(habit: Habit, date: string): boolean {
   const createdDate = habit.createdAt.slice(0, 10);
   if (date < createdDate) return false;
 
@@ -104,7 +104,7 @@ function isHabitActiveOnDate(habit: Habit, date: string): boolean {
   return true;
 }
 
-function isHabitDueOnDate(habit: Habit, date: string): boolean {
+export function isHabitDueOnDate(habit: Habit, date: string): boolean {
   if (habit.frequency.type === 'weekly_count') return false;
   if (habit.frequency.type === 'daily') return true;
 
@@ -112,7 +112,7 @@ function isHabitDueOnDate(habit: Habit, date: string): boolean {
   return habit.frequency.days.includes(dayOfWeek);
 }
 
-function addDays(dateStr: string, days: number): string {
+export function addDays(dateStr: string, days: number): string {
   const d = new Date(dateStr + 'T00:00:00');
   d.setDate(d.getDate() + days);
   return `${d.getFullYear()}-${padTwo(d.getMonth() + 1)}-${padTwo(d.getDate())}`;
