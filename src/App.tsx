@@ -9,6 +9,7 @@ import { HabitsPage } from '@/ui/pages/HabitsPage';
 import { NewHabitPage } from '@/ui/pages/NewHabitPage';
 import { HabitDetailPage } from '@/ui/pages/HabitDetailPage';
 import { CalendarPage } from '@/ui/pages/CalendarPage';
+import { RewardsPage } from '@/ui/pages/RewardsPage';
 import { SettingsPage } from '@/ui/pages/SettingsPage';
 import { createSupabaseClient } from '@/lib/supabase';
 
@@ -78,6 +79,7 @@ export function App() {
         >
           <Route path="/" element={<TodayPage />} />
           <Route path="/calendar" element={<CalendarPage />} />
+          <Route path="/rewards" element={<RewardsPage />} />
           <Route path="/habits" element={<HabitsPage />} />
           <Route path="/habits/new" element={<NewHabitPage />} />
           <Route path="/habits/:id" element={<HabitDetailPage />} />
