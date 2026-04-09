@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '../../../lib/database.types';
 import { createSupabaseRewardRepository } from '../supabaseRewardRepository';
+import { DuplicateRewardLevelError } from '../rewardRepository';
 import type { Reward, CreateRewardInput } from '../../../domain/models';
 
 // --- Supabase mock builder ---
@@ -145,7 +146,7 @@ describe('SupabaseRewardRepository', () => {
       expect(result).toEqual(sampleReward);
     });
 
-    it('should throw a duplicate level error on UNIQUE constraint violation', async () => {
+    it('should throw a DuplicateRewardLevelError with the conflicting level on UNIQUE constraint violation', async () => {
       const input: CreateRewardInput = {
         level: 5,
         description: 'Duplicate level',
@@ -160,9 +161,25 @@ describe('SupabaseRewardRepository', () => {
       });
 
       const repo = createSupabaseRewardRepository(mock.client, USER_ID);
-      await expect(repo.create(input)).rejects.toThrow(
-        'Reward already exists for level: 5',
-      );
+      await expect(repo.create(input)).rejects.toBeInstanceOf(DuplicateRewardLevelError);
+      // Re-trigger to check level field (separate call because rejects.toBeInstanceOf consumes the rejection)
+      mock.chain.single.mockResolvedValue({
+        data: null,
+        error: {
+          code: '23505',
+          message: 'duplicate key value violates unique constraint "uq_rewards_user_level"',
+        },
+      });
+      try {
+        await repo.create(input);
+        throw new Error('expected rejection');
+      } catch (err) {
+        expect(err).toBeInstanceOf(DuplicateRewardLevelError);
+        expect((err as DuplicateRewardLevelError).level).toBe(5);
+        expect((err as DuplicateRewardLevelError).message).toBe(
+          'Reward already exists for level: 5',
+        );
+      }
     });
 
     it('should throw on generic Supabase error', async () => {
