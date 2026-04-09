@@ -8,7 +8,7 @@
  *   - this-week and this-month achievement summaries via statsService
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import type { Habit, Completion } from '@/domain/models';
 import type { HabitRepository } from '@/data/repositories/habitRepository';
 import type { CompletionRepository } from '@/data/repositories/completionRepository';
@@ -103,6 +103,49 @@ export function useStatsData(
     };
   }, [habitRepository, completionRepository]);
 
+  const derived = useMemo(() => {
+    if (habits.length === 0) {
+      return { xp: null, weekly: null, monthly: null };
+    }
+
+    const today = getTodayString();
+    const earliest = getEarliestHabitDate(habits) ?? today;
+
+    const xp = calculateTotalXp(habits, completions, earliest, today);
+
+    const weekRange = getWeekRange(today);
+    const monthRange = getMonthRange(today);
+
+    // Calculate per-day achievements once over the union of week and month
+    // (month range fully contains the relevant span when today is mid-month;
+    // for weeks crossing month boundaries we extend the range to include both).
+    const aggregateStart =
+      weekRange.start < monthRange.start ? weekRange.start : monthRange.start;
+    const aggregateEnd = weekRange.end > monthRange.end ? weekRange.end : monthRange.end;
+
+    const achievements = calculateDailyAchievements(
+      habits,
+      completions,
+      aggregateStart,
+      aggregateEnd,
+    );
+
+    const weekly = aggregateAchievements(
+      achievements,
+      weekRange.start,
+      weekRange.end,
+      today,
+    );
+    const monthly = aggregateAchievements(
+      achievements,
+      monthRange.start,
+      monthRange.end,
+      today,
+    );
+
+    return { xp, weekly, monthly };
+  }, [habits, completions]);
+
   if (isLoading || error || habits.length === 0) {
     return {
       isLoading,
@@ -113,35 +156,11 @@ export function useStatsData(
     };
   }
 
-  const today = getTodayString();
-  const earliest = getEarliestHabitDate(habits) ?? today;
-
-  const xp = calculateTotalXp(habits, completions, earliest, today);
-
-  const weekRange = getWeekRange(today);
-  const monthRange = getMonthRange(today);
-
-  // Calculate per-day achievements once over the union of week and month
-  // (month range fully contains the relevant span when today is mid-month;
-  // for weeks crossing month boundaries we extend the range to include both).
-  const aggregateStart = weekRange.start < monthRange.start ? weekRange.start : monthRange.start;
-  const aggregateEnd = weekRange.end > monthRange.end ? weekRange.end : monthRange.end;
-
-  const achievements = calculateDailyAchievements(
-    habits,
-    completions,
-    aggregateStart,
-    aggregateEnd,
-  );
-
-  const weekly = aggregateAchievements(achievements, weekRange.start, weekRange.end, today);
-  const monthly = aggregateAchievements(achievements, monthRange.start, monthRange.end, today);
-
   return {
     isLoading,
     error,
-    xp,
-    weekly,
-    monthly,
+    xp: derived.xp,
+    weekly: derived.weekly,
+    monthly: derived.monthly,
   };
 }

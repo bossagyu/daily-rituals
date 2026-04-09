@@ -121,6 +121,15 @@ export function CalendarPage() {
         <h1 className="text-2xl font-bold text-foreground">カレンダー</h1>
       </header>
 
+      {stats.error && (
+        <div
+          role="alert"
+          className="mb-4 rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive"
+        >
+          統計情報を取得できませんでした: {stats.error}
+        </div>
+      )}
+
       {stats.xp && stats.weekly && stats.monthly && (
         <div className="mb-6 space-y-3">
           <LevelBar
