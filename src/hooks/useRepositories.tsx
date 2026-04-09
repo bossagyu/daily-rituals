@@ -11,16 +11,19 @@ import type { HabitRepository } from '@/data/repositories/habitRepository';
 import type { CompletionRepository } from '@/data/repositories/completionRepository';
 import type { PushSubscriptionRepository } from '@/data/repositories/pushSubscriptionRepository';
 import type { TaskRepository } from '@/data/repositories/taskRepository';
+import type { RewardRepository } from '@/data/repositories/rewardRepository';
 import { createSupabaseHabitRepository } from '@/data/repositories/supabaseHabitRepository';
 import { createSupabaseCompletionRepository } from '@/data/repositories/supabaseCompletionRepository';
 import { createSupabasePushSubscriptionRepository } from '@/data/repositories/supabasePushSubscriptionRepository';
 import { createSupabaseTaskRepository } from '@/data/repositories/supabaseTaskRepository';
+import { createSupabaseRewardRepository } from '@/data/repositories/supabaseRewardRepository';
 
 export type RepositoryContextValue = {
   readonly habitRepository: HabitRepository;
   readonly completionRepository: CompletionRepository;
   readonly pushSubscriptionRepository: PushSubscriptionRepository;
   readonly taskRepository: TaskRepository;
+  readonly rewardRepository: RewardRepository;
 };
 
 const RepositoryContext = createContext<RepositoryContextValue | null>(null);
@@ -46,6 +49,7 @@ export function RepositoryProvider({
       completionRepository: createSupabaseCompletionRepository(client, userId),
       pushSubscriptionRepository: createSupabasePushSubscriptionRepository(client, userId),
       taskRepository: createSupabaseTaskRepository(client, userId),
+      rewardRepository: createSupabaseRewardRepository(client, userId),
     }),
     [client, userId],
   );

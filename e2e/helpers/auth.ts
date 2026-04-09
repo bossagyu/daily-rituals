@@ -5,6 +5,7 @@ export async function deleteTestUser(userId: string): Promise<void> {
   await admin.from('push_subscriptions').delete().eq('user_id', userId);
   await admin.from('completions').delete().eq('user_id', userId);
   await admin.from('tasks').delete().eq('user_id', userId);
+  await admin.from('rewards').delete().eq('user_id', userId);
   await admin.from('habits').delete().eq('user_id', userId);
   await admin.auth.admin.deleteUser(userId);
 }
