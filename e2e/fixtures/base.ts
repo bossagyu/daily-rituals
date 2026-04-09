@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 import {
   seedHabit,
   seedCompletion,
+  seedReward,
   cleanupTestData,
   type SeedHabitOverrides,
 } from '../helpers/test-data';
@@ -20,6 +21,7 @@ type TestFixtures = {
   testUserId: string;
   seedHabit: (overrides?: SeedHabitOverrides) => Promise<{ id: string }>;
   seedCompletion: (habitId: string, date: string) => Promise<void>;
+  seedReward: (level: number, description: string) => Promise<{ id: string }>;
   cleanDb: void;
 };
 
@@ -48,6 +50,13 @@ export const test = base.extend<TestFixtures>({
   seedCompletion: async ({ testUserId }, use) => {
     const seed = async (habitId: string, date: string) => {
       await seedCompletion(testUserId, habitId, date);
+    };
+    await use(seed);
+  },
+
+  seedReward: async ({ testUserId }, use) => {
+    const seed = async (level: number, description: string) => {
+      return seedReward(testUserId, level, description);
     };
     await use(seed);
   },

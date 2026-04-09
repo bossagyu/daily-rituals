@@ -20,6 +20,7 @@ export type SeedHabitOverrides = {
   readonly color?: string;
   readonly archivedAt?: string | null;
   readonly reminderTime?: string | null;
+  readonly createdAt?: string;
 };
 
 export async function seedHabit(
@@ -27,17 +28,22 @@ export async function seedHabit(
   overrides: SeedHabitOverrides = {},
 ): Promise<{ id: string }> {
   const admin = createAdminClient();
+  const insertPayload: Record<string, unknown> = {
+    user_id: userId,
+    name: overrides.name ?? 'E2Eテスト習慣',
+    frequency_type: overrides.frequencyType ?? 'daily',
+    frequency_value: overrides.frequencyValue ?? null,
+    color: overrides.color ?? '#6366f1',
+    archived_at: overrides.archivedAt ?? null,
+    reminder_time: overrides.reminderTime ?? null,
+  };
+  if (overrides.createdAt !== undefined) {
+    insertPayload.created_at = overrides.createdAt;
+  }
+
   const { data, error } = await admin
     .from('habits')
-    .insert({
-      user_id: userId,
-      name: overrides.name ?? 'E2Eテスト習慣',
-      frequency_type: overrides.frequencyType ?? 'daily',
-      frequency_value: overrides.frequencyValue ?? null,
-      color: overrides.color ?? '#6366f1',
-      archived_at: overrides.archivedAt ?? null,
-      reminder_time: overrides.reminderTime ?? null,
-    })
+    .insert(insertPayload)
     .select('id')
     .single();
 
@@ -65,10 +71,30 @@ export async function seedCompletion(
   }
 }
 
+export async function seedReward(
+  userId: string,
+  level: number,
+  description: string,
+): Promise<{ id: string }> {
+  const admin = createAdminClient();
+  const { data, error } = await admin
+    .from('rewards')
+    .insert({ user_id: userId, level, description })
+    .select('id')
+    .single();
+
+  if (error) {
+    throw new Error(`Failed to seed reward: ${error.message}`);
+  }
+
+  return { id: data.id };
+}
+
 export async function cleanupTestData(userId: string): Promise<void> {
   const admin = createAdminClient();
   await admin.from('push_subscriptions').delete().eq('user_id', userId);
   await admin.from('completions').delete().eq('user_id', userId);
   await admin.from('tasks').delete().eq('user_id', userId);
+  await admin.from('rewards').delete().eq('user_id', userId);
   await admin.from('habits').delete().eq('user_id', userId);
 }
