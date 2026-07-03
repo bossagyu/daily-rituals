@@ -45,6 +45,26 @@ jobs:
             echo "SUPABASE_LOCAL_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY"
           } >> "$GITHUB_ENV"
 
+      # Newer Supabase local stacks may not auto-grant public-table privileges
+      # to the API roles, causing "permission denied for table ..." during E2E
+      # seeding. Re-assert the grants explicitly. Local stack only — production
+      # is managed by Supabase and unaffected (this never touches migrations).
+      - name: Grant privileges on public tables to Supabase roles (local stack)
+        run: |
+          eval "$(supabase status -o env)"
+          : "${DB_URL:?supabase status did not return DB_URL}"
+          echo "== grants on public.habits BEFORE =="
+          psql "$DB_URL" -Atc "select grantee||':'||privilege_type from information_schema.role_table_grants where table_schema='public' and table_name='habits' order by 1;" || true
+          psql "$DB_URL" -v ON_ERROR_STOP=1 <<'SQL'
+          GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
+          GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role;
+          GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;
+          ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated, service_role;
+          ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO anon, authenticated, service_role;
+          SQL
+          echo "== grants on public.habits AFTER =="
+          psql "$DB_URL" -Atc "select grantee||':'||privilege_type from information_schema.role_table_grants where table_schema='public' and table_name='habits' order by 1;" || true
+
       - name: Run E2E tests
         run: npm run test:e2e
 
