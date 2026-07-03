@@ -33,6 +33,18 @@ jobs:
       - name: Start Supabase
         run: supabase start
 
+      - name: Export Supabase local credentials for E2E
+        run: |
+          eval "$(supabase status -o env)"
+          : "${API_URL:?supabase status did not return API_URL}"
+          : "${ANON_KEY:?supabase status did not return ANON_KEY}"
+          : "${SERVICE_ROLE_KEY:?supabase status did not return SERVICE_ROLE_KEY}"
+          {
+            echo "SUPABASE_LOCAL_URL=$API_URL"
+            echo "SUPABASE_LOCAL_ANON_KEY=$ANON_KEY"
+            echo "SUPABASE_LOCAL_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY"
+          } >> "$GITHUB_ENV"
+
       - name: Run E2E tests
         run: npm run test:e2e
 
