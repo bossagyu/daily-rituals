@@ -1,5 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { PushSubscriptionRepository } from '../data/repositories/pushSubscriptionRepository';
+import {
+  reconcileSubscription,
+  ensureSubscription as ensureSubscriptionOp,
+} from './pushSubscriptionOperations';
 
 export type UsePushSubscriptionReturn = {
   readonly permissionState: NotificationPermission;
@@ -7,23 +11,8 @@ export type UsePushSubscriptionReturn = {
   readonly ensureSubscription: () => Promise<void>;
 };
 
-function getVapidPublicKey(): string {
-  const key = import.meta.env.VITE_VAPID_PUBLIC_KEY;
-  if (!key) {
-    throw new Error('VITE_VAPID_PUBLIC_KEY is not configured');
-  }
-  return key;
-}
-
-function urlBase64ToUint8Array(base64String: string): Uint8Array {
-  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
-  const rawData = atob(base64);
-  const outputArray = new Uint8Array(rawData.length);
-  for (let i = 0; i < rawData.length; i++) {
-    outputArray[i] = rawData.charCodeAt(i);
-  }
-  return outputArray;
+function hasServiceWorker(): boolean {
+  return typeof navigator !== 'undefined' && 'serviceWorker' in navigator;
 }
 
 export function usePushSubscription(
@@ -39,38 +28,24 @@ export function usePushSubscription(
     }
   }, []);
 
-  // Silent re-registration on app load
+  // Reconcile the device subscription on app load (best-effort). This also
+  // re-subscribes when iOS has silently dropped the subscription, as long as
+  // notification permission is already granted.
   useEffect(() => {
-    if (!repository || typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return;
+    if (!repository || !hasServiceWorker()) return;
 
-    async function checkAndReregister() {
+    async function reconcile() {
       try {
         const registration = await navigator.serviceWorker.ready;
-        const existingSub = await registration.pushManager.getSubscription();
-        if (!existingSub) return;
-
-        const dbSub = await repository!.findByEndpoint(existingSub.endpoint);
-        if (dbSub) return;
-
-        await existingSub.unsubscribe();
-        const vapidKey = urlBase64ToUint8Array(getVapidPublicKey());
-        const newSub = await registration.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: vapidKey,
-        });
-
-        const keys = newSub.toJSON().keys ?? {};
-        await repository!.upsert({
-          endpoint: newSub.endpoint,
-          p256dh: keys.p256dh ?? '',
-          auth: keys.auth ?? '',
-        });
+        const permission =
+          typeof Notification !== 'undefined' ? Notification.permission : 'default';
+        await reconcileSubscription(registration, repository!, permission);
       } catch {
-        // Silent failure — re-registration is best-effort
+        // Silent failure — reconciliation is best-effort.
       }
     }
 
-    void checkAndReregister();
+    void reconcile();
   }, [repository]);
 
   const requestPermission = useCallback(async (): Promise<boolean> => {
@@ -81,25 +56,9 @@ export function usePushSubscription(
   }, []);
 
   const ensureSubscription = useCallback(async (): Promise<void> => {
-    if (!repository || typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return;
-
+    if (!repository || !hasServiceWorker()) return;
     const registration = await navigator.serviceWorker.ready;
-    let subscription = await registration.pushManager.getSubscription();
-
-    if (!subscription) {
-      const vapidKey = urlBase64ToUint8Array(getVapidPublicKey());
-      subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: vapidKey,
-      });
-    }
-
-    const keys = subscription.toJSON().keys ?? {};
-    await repository.upsert({
-      endpoint: subscription.endpoint,
-      p256dh: keys.p256dh ?? '',
-      auth: keys.auth ?? '',
-    });
+    await ensureSubscriptionOp(registration, repository);
   }, [repository]);
 
   return { permissionState, requestPermission, ensureSubscription };
