@@ -456,4 +456,31 @@ describe('TodayPage', () => {
       expect(screen.queryByText('Today')).not.toBeInTheDocument();
     });
   });
+
+  it('選択日が習慣の作成日より前なら、その習慣を表示しない', async () => {
+    mockHabitRepository = createMockHabitRepository({
+      findAll: vi.fn().mockResolvedValue([
+        makeHabit({ id: 'h-new', name: '後から追加した習慣', createdAt: '2026-03-20T00:00:00Z' }),
+      ]),
+    });
+
+    renderWithRouter(['/?date=2026-03-19']);
+
+    expect(
+      await screen.findByText('この日にやるべきことはありませんでした'),
+    ).toBeInTheDocument();
+    expect(screen.queryByText('後から追加した習慣')).not.toBeInTheDocument();
+  });
+
+  it('選択日が習慣の作成日当日なら、その習慣を表示する', async () => {
+    mockHabitRepository = createMockHabitRepository({
+      findAll: vi.fn().mockResolvedValue([
+        makeHabit({ id: 'h-new', name: '後から追加した習慣', createdAt: '2026-03-20T00:00:00Z' }),
+      ]),
+    });
+
+    renderWithRouter(['/?date=2026-03-20']);
+
+    expect(await screen.findByText('後から追加した習慣')).toBeInTheDocument();
+  });
 });

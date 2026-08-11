@@ -3,26 +3,6 @@ import type { Habit, Completion } from '../models';
 const DAYS_IN_WEEK = 7;
 
 /**
- * Determines whether a habit is due on the given date based on its frequency.
- *
- * - daily: always true
- * - weekly_days: true if the date's day of week is in the specified days
- * - weekly_count: always true (the user can complete it on any day)
- */
-export function isDueOnDate(habit: Habit, date: Date): boolean {
-  const { frequency } = habit;
-
-  switch (frequency.type) {
-    case 'daily':
-      return true;
-    case 'weekly_days':
-      return frequency.days.includes(date.getDay());
-    case 'weekly_count':
-      return true;
-  }
-}
-
-/**
  * Represents the weekly progress for a habit.
  */
 export type WeeklyProgress = {
