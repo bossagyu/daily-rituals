@@ -494,14 +494,24 @@ import { floorToSlot } from '../src/domain/services/timeService';
 一時的に、既存の `getCurrentUtcTimeSlot()` の戻り値と `floorToSlot` の結果が一致することを
 レスポンスの `debugSlot` フィールドで返す（このデバッグコードは Step 4 で削除する）。
 
-- [ ] **Step 2: プレビューデプロイして確認する**
+- [ ] **Step 2: PR の自動プレビューで確認する**
+
+Vercel の Git 連携が PR ごとにプレビューデプロイを自動生成する。Vercel CLI の
+ローカル認証は使わない。
+
+1. この Phase のブランチを push し、PR を作る（Task 2.4 の PR を先に開いてよい）
+2. PR に付く Vercel のプレビュー URL を開く
+3. そのプレビューに対して `x-cron-secret` 付きで POST し、200 が返ることを確認する
 
 ```bash
-npx vercel deploy
+curl -i -X POST "https://<preview-url>/api/send-reminders" \
+  -H "x-cron-secret: $CRON_SECRET"
 ```
 
-デプロイされたプレビュー URL に対して `x-cron-secret` 付きで POST し、200 が返ること、
-および関数がクラッシュしていないことを Vercel のログで確認する。
+4. Vercel のデプロイログに、`api/send-reminders.ts` のビルドエラー（`../src/...`
+   が解決できない等）が出ていないことを確認する
+
+Expected: HTTP 200。`Cannot find module` 等のビルド/実行時エラーが出ていないこと
 
 - [ ] **Step 3: 結果を記録する**
 
