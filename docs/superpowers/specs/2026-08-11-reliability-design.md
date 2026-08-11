@@ -189,16 +189,28 @@ SQL 側の絞り込みが失われるが、`idx_habits_reminder_time` の部分�
 時刻そのもの」になる。DB を覗いたときに何時の通知かが一目で分かる状態にすることが目的である。
 `generateTimeOptions` / `roundToTenMinutes` は残す。
 
-**due 判定の 1 本化（P3）**
+**習慣スケジュール判定の整理（P3）**
 
-現在、同じ「その日にやるべきか」の判定が 2 つ存在する。
+現在、似た名前の「その日にやるべきか」の判定が 2 つあるが、**両者は `weekly_count` の扱いが逆である**。
 
-- `frequencyService.isDueOnDate(habit, date: Date)` — Date ベース
-- `calendarService.isHabitDueOnDate(habit, date: string)` — 文字列ベース
+- `frequencyService.isDueOnDate(habit, date: Date)` — `weekly_count` は **true**（Today 画面は週 N 回の習慣も毎日出す）
+- `calendarService.isHabitDueOnDate(habit, date: string)` — `weekly_count` は **false**（統計の分母には数えない）
 
-日付は `YYYY-MM-DD` 文字列で扱う方針に合わせ、文字列ベースへ 1 本化する。
-`TodayPage` の `dueHabits` は `isHabitActiveOnDate` と `isHabitDueOnDate` の組で判定するよう変更し、
-作成日より前の日付に習慣が出ないようにする。#109 が再発しないのは、判定が 1 箇所になるためである。
+つまり単純な重複ではなく、目的の異なる 2 つの述語が紛らわしい名前で並んでいる。統合するのではなく、
+**役割が名前から分かるように分離**し、新しい `src/domain/services/habitScheduleService.ts` に集約する。
+
+```ts
+export function isActiveOnDate(habit: Habit, date: string): boolean          // 作成日〜アーカイブ日の範囲内か
+export function isListedOnDate(habit: Habit, date: string): boolean          // Today 画面のリストに出すか（weekly_count は true）
+export function isCountedAsTargetOnDate(habit: Habit, date: string): boolean // 統計の分母に数えるか（weekly_count は false）
+```
+
+日付はすべて `YYYY-MM-DD` 文字列で受け取る。`calendarService` と `xpService` は既存の
+`isHabitActiveOnDate` / `isHabitDueOnDate` を使うのをやめ、この新サービスを参照する。
+
+`TodayPage` の `dueHabits` は `isActiveOnDate` と `isListedOnDate` の組で判定するよう変更し、
+作成日より前の日付に習慣が出ないようにする。#109 が再発しないのは、判定の住所が 1 箇所になり、
+かつ 2 つの述語の違いが名前で表現されるためである。
 
 **設定画面の通知診断 UI**
 
@@ -274,7 +286,7 @@ SettingsPage
 | 対象 | 種別 | 重点 |
 |---|---|---|
 | `timeService` | ユニット | DST 境界（`America/New_York` の 3 月 / 11 月）、UTC 日付をまたぐ `Asia/Tokyo` 06:00、UTC+14 の `Pacific/Kiritimati` |
-| due 判定（統合後） | ユニット | 作成日当日 / 前日、アーカイブ日前後の境界値 |
+| `habitScheduleService` | ユニット | 作成日当日 / 前日、アーカイブ日前後の境界値、`weekly_count` が `isListedOnDate` では true・`isCountedAsTargetOnDate` では false になること |
 | `send-reminders` の `handler` | 統合 | 現在ほぼ未テスト（既存 146 行は純粋関数のみ）。Supabase クライアントをモックし「JST 07:00 の習慣が UTC 22:00 に通知される」を検証。購読 0 件で `no_subscription` が記録されることも検証 |
 | `send-test-notification` | 統合 | 他ユーザーの購読へ送れないことを検証 |
 | マイグレーション | CI | ローカル Supabase で `reminder_time` 変換 SQL の前後値を検証 |
@@ -293,7 +305,7 @@ SettingsPage
 
 | Phase | 内容 | 対応する問題 | 規模 |
 |---|---|---|---|
-| 1 | #109 修正 + due 判定の 1 本化 | P3 | 小 |
+| 1 | #109 修正 + `habitScheduleService` への判定集約 | P3 | 小 |
 | 2 | `timeService` 追加 + クライアント内の日付重複解消 + `tsconfig` に `api` を追加 | P1（準備） | 中 |
 | 3 | `profiles.timezone` マイグレーション + `reminder_time` 変換 + サーバーの TZ 判定 + `ProfileRepository` と TZ 同期 | P1 | 中〜大 |
 | 4 | `notification_events` + `system_heartbeats` + 診断 UI + テスト通知 | P2 | 中 |
