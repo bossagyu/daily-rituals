@@ -24,6 +24,11 @@
 - PR 作成前に `npm test` と `npm run test:e2e` をローカルで実行し全件パスを確認する
 - PR は DA レビューを必須とする（サイズを問わない）
 - 新規ブランチは常に最新の `main` から切る。`main` へ直接 push しない
+- **`npm run lint` は現在リポジトリ全体で動作しない**（ESLint 9 は flat な
+  `eslint.config.js` を要求するが、リポジトリには `.eslintrc.json` しかない）。
+  この計画の各ステップで `npm run lint` と書かれている箇所は実行不能なので、
+  `npm run typecheck` と `npm test` で代替する。ESLint の flat config 移行は
+  この信頼性トラックのスコープ外とし、別 issue として扱う
 
 ## File Structure
 
