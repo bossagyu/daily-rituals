@@ -1,5 +1,9 @@
 import type { Habit } from '../models/habit';
 import type { Completion } from '../models/completion';
+import {
+  isActiveOnDate,
+  isCountedAsTargetOnDate,
+} from './habitScheduleService';
 
 const DAYS_IN_WEEK = 7;
 const WEEKS_IN_GRID = 6;
@@ -92,26 +96,6 @@ export type DayAchievement = {
   readonly isTargetDay: boolean;
 };
 
-export function isHabitActiveOnDate(habit: Habit, date: string): boolean {
-  const createdDate = habit.createdAt.slice(0, 10);
-  if (date < createdDate) return false;
-
-  if (habit.archivedAt !== null) {
-    const archivedDate = habit.archivedAt.slice(0, 10);
-    if (date > archivedDate) return false;
-  }
-
-  return true;
-}
-
-export function isHabitDueOnDate(habit: Habit, date: string): boolean {
-  if (habit.frequency.type === 'weekly_count') return false;
-  if (habit.frequency.type === 'daily') return true;
-
-  const dayOfWeek = new Date(date + 'T00:00:00').getDay();
-  return habit.frequency.days.includes(dayOfWeek);
-}
-
 export function addDays(dateStr: string, days: number): string {
   const d = new Date(dateStr + 'T00:00:00');
   d.setDate(d.getDate() + days);
@@ -143,9 +127,9 @@ export function calculateDailyAchievements(
     const completedHabitNames: string[] = [];
 
     for (const habit of habits) {
-      if (!isHabitActiveOnDate(habit, current)) continue;
+      if (!isActiveOnDate(habit, current)) continue;
 
-      if (isHabitDueOnDate(habit, current)) {
+      if (isCountedAsTargetOnDate(habit, current)) {
         targetCount++;
       }
 
