@@ -229,7 +229,7 @@ export function isCountedAsTargetOnDate(habit: Habit, date: string): boolean {
 - [ ] **Step 4: テストが通ることを確認**
 
 Run: `npx vitest run src/domain/services/__tests__/habitScheduleService.test.ts`
-Expected: PASS（13 テスト）
+Expected: PASS（10 テスト = isActiveOnDate 4 + isListedOnDate 3 + isCountedAsTargetOnDate 3）
 
 - [ ] **Step 5: コミット**
 
