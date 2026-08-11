@@ -9,7 +9,7 @@
 このスペックは「時刻・日付の扱い」と「通知パイプラインの可観測性」を立て直す。
 症状として現れているのは早朝リマインダーのズレと通知不達だが、真因は次の2つである。
 
-1. 時刻に関する知識が 4 箇所に重複し、それぞれ違う前提（ローカル日付 / UTC 日付 / 分オフセット）で実装されている
+1. 時刻に関する知識が 5 箇所に重複し、それぞれ違う前提（ローカル日付 / UTC 日付 / 分オフセット）で実装されている
 2. 通知パイプラインが壊れても、どこにも痕跡が残らない
 
 いずれも個別のバグ修正では再発する構造的な問題なので、表現の統一と観測点の追加で根治する。
@@ -34,7 +34,7 @@
 
 ## アーキテクチャ
 
-### 現状: 時刻の知識が 4 箇所に分散
+### 現状: 時刻の知識が 5 箇所に分散
 
 | 場所 | 「今日」の定義 | 時刻の表現 |
 |---|---|---|
@@ -42,8 +42,18 @@
 | `src/hooks/useStatsData.ts` | 端末ローカル日付（`getTodayString` を再実装） | — |
 | `src/lib/reminderTime.ts` | — | ローカル ⇄ UTC を分オフセットで変換 |
 | `api/send-reminders.ts` | UTC 日付 | UTC スロット |
+| `habits.created_at` / `archived_at` | UTC 日付（Postgres のカラムデフォルト。クライアントは値を設定しない） | — |
 
 分オフセット（`Date.getTimezoneOffset()`）は DST を表現できないため、この方式では正しくなりようがない。
+
+`habits.created_at` / `archived_at` は他の 4 箇所と性質が異なり、日付の「取得元」ではなく
+DB カラムそのものが UTC 日付を持つ。`habitScheduleService.isActiveOnDate`（Phase 1 で新設）は
+この UTC 日付を、呼び出し元がローカル日付として渡す `date`（`src/lib/dateUtils.ts` の
+`getTodayString`）とそのまま比較しており、負の UTC オフセット地域では作成当日の習慣が
+Today に表示されない不整合を生む。Phase 1 の P3 対応表（下記）はこの述語をレビューしたが、
+このハザードは一覧に含めていない。JST（本アプリの実ユーザー）ではズレが無害な方向にしか
+効かないため実害はないが、`profiles.timezone` 導入後（Phase 3）にはユーザー TZ 基準へ
+揃える必要がある。
 
 ### 変更後: `timeService` を単一の源泉とする
 
@@ -231,6 +241,14 @@ export function isCountedAsTargetOnDate(habit: Habit, date: string): boolean // 
 「再登録」は `pushSubscriptionOperations.ensureSubscription` を明示的に呼ぶ。
 これにより、調査ドキュメント 5 章の復旧手順（習慣のリマインダーを OFF→ON し直す）が不要になる。
 
+**依存関係の注記:** `pushSubscriptionOperations` モジュール（`src/hooks/pushSubscriptionOperations.ts`、
+`ensureSubscription` と `reconcileSubscription` を持つ）は、本スペック作成時点で未マージのブランチ
+`fix/push-auto-resubscribe` に存在する。`main` には現時点でこのファイルは無く、`ensureSubscription`
+は `src/hooks/usePushSubscription.ts` の `usePushSubscription` フックが返すメンバーとしてのみ
+存在する。この診断 UI（Phase 4）を実装する時点で `fix/push-auto-resubscribe` がマージ済みで
+なければ、`ensureSubscription` をフックから切り出して単独の `pushSubscriptionOperations.ts` に
+する作業が Phase 4 の前提として必要になる。
+
 **完了トグルの失敗ハンドリング（P4）**
 
 - `useCompletions.toggleCompletion` を楽観更新にする。先に state を更新し、失敗時にロールバックする。
@@ -307,7 +325,7 @@ SettingsPage
 |---|---|---|---|
 | 1 | #109 修正 + `habitScheduleService` への判定集約 | P3 | 小 |
 | 2 | `timeService` 追加 + クライアント内の日付重複解消 + `tsconfig` に `api` を追加 | P1（準備） | 中 |
-| 3 | `profiles.timezone` マイグレーション + `reminder_time` 変換 + サーバーの TZ 判定 + `ProfileRepository` と TZ 同期 | P1 | 中〜大 |
+| 3 | `profiles.timezone` マイグレーション + `reminder_time` 変換 + サーバーの TZ 判定 + `ProfileRepository` と TZ 同期 + `habitScheduleService.isActiveOnDate` のユーザー TZ 化 | P1 | 中〜大 |
 | 4 | `notification_events` + `system_heartbeats` + 診断 UI + テスト通知 | P2 | 中 |
 | 5 | トースト + 楽観更新 | P4 | 小〜中 |
 

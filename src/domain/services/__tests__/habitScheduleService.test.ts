@@ -57,6 +57,13 @@ describe('isListedOnDate', () => {
     const habit = makeHabit({ frequency: { type: 'weekly_count', count: 3 } });
     expect(isListedOnDate(habit, '2026-03-12')).toBe(true);
   });
+
+  it('weekly_days は日曜（0）も指定できる', () => {
+    // 2026-03-15 は日曜（0）、2026-03-16 は月曜
+    const habit = makeHabit({ frequency: { type: 'weekly_days', days: [0] } });
+    expect(isListedOnDate(habit, '2026-03-15')).toBe(true);
+    expect(isListedOnDate(habit, '2026-03-16')).toBe(false);
+  });
 });
 
 describe('isCountedAsTargetOnDate', () => {
@@ -73,5 +80,12 @@ describe('isCountedAsTargetOnDate', () => {
     const habit = makeHabit({ frequency: { type: 'weekly_days', days: [4] } });
     expect(isCountedAsTargetOnDate(habit, '2026-03-12')).toBe(true);
     expect(isCountedAsTargetOnDate(habit, '2026-03-13')).toBe(false);
+  });
+
+  it('weekly_days は日曜（0）も指定できる', () => {
+    // 2026-03-15 は日曜（0）、2026-03-16 は月曜
+    const habit = makeHabit({ frequency: { type: 'weekly_days', days: [0] } });
+    expect(isCountedAsTargetOnDate(habit, '2026-03-15')).toBe(true);
+    expect(isCountedAsTargetOnDate(habit, '2026-03-16')).toBe(false);
   });
 });

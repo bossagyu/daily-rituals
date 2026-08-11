@@ -22,6 +22,8 @@ function getDayOfWeek(date: string): number {
  * その日付の時点で習慣が存在し、まだアーカイブされていないか。
  */
 export function isActiveOnDate(habit: Habit, date: string): boolean {
+  // TODO(Phase 3): createdAt は UTC 日付、date はローカル日付。負のUTCオフセットの
+  // 地域では作成当日に習慣が表示されない。profiles.timezone 導入後にユーザーTZ基準へ移行する。
   if (date < habit.createdAt.slice(0, 10)) return false;
 
   if (habit.archivedAt !== null && date > habit.archivedAt.slice(0, 10)) {

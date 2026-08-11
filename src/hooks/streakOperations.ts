@@ -33,7 +33,10 @@ export function computeStreakForHabit(
 
 /**
  * Get the Monday (week start) for a given YYYY-MM-DD date string.
- * Uses local date interpretation (not UTC) to match FrequencyService behavior.
+ * Uses local date interpretation (not UTC) because the returned Date is passed
+ * to frequencyService.getWeeklyProgress, which reconstructs date strings via
+ * local getters (getFullYear/getMonth/getDate). Parsing dateStr as UTC midnight
+ * (`new Date(dateStr)`) would shift the day by one in negative-UTC-offset zones.
  */
 export function getWeekStartDate(dateStr: string): Date {
   const [year, month, day] = dateStr.split('-').map(Number);

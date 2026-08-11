@@ -75,7 +75,7 @@
   - `isListedOnDate(habit: Habit, date: string): boolean`
   - `isCountedAsTargetOnDate(habit: Habit, date: string): boolean`
 
-- [ ] **Step 1: 失敗するテストを書く**
+- [x] **Step 1: 失敗するテストを書く**
 
 `src/domain/services/__tests__/habitScheduleService.test.ts`:
 
@@ -159,12 +159,12 @@ describe('isCountedAsTargetOnDate', () => {
 });
 ```
 
-- [ ] **Step 2: テストが失敗することを確認**
+- [x] **Step 2: テストが失敗することを確認**
 
 Run: `npx vitest run src/domain/services/__tests__/habitScheduleService.test.ts`
 Expected: FAIL — `Failed to resolve import "../habitScheduleService"`
 
-- [ ] **Step 3: 実装する**
+- [x] **Step 3: 実装する**
 
 `src/domain/services/habitScheduleService.ts`:
 
@@ -231,12 +231,12 @@ export function isCountedAsTargetOnDate(habit: Habit, date: string): boolean {
 }
 ```
 
-- [ ] **Step 4: テストが通ることを確認**
+- [x] **Step 4: テストが通ることを確認**
 
 Run: `npx vitest run src/domain/services/__tests__/habitScheduleService.test.ts`
 Expected: PASS（10 テスト = isActiveOnDate 4 + isListedOnDate 3 + isCountedAsTargetOnDate 3）
 
-- [ ] **Step 5: コミット**
+- [x] **Step 5: コミット**
 
 ```bash
 git add src/domain/services/habitScheduleService.ts src/domain/services/__tests__/habitScheduleService.test.ts
@@ -254,12 +254,12 @@ git commit -m "feat: 習慣スケジュール判定を habitScheduleService に�
 **Interfaces:**
 - Consumes: Task 1.1 の `isActiveOnDate` / `isCountedAsTargetOnDate`
 
-- [ ] **Step 1: 既存テストを実行してベースラインを取る**
+- [x] **Step 1: 既存テストを実行してベースラインを取る**
 
 Run: `npx vitest run src/domain/services/__tests__/calendarService.test.ts src/domain/services/__tests__/xpService.test.ts`
 Expected: PASS（この時点では全て通る。移譲後も同じ結果になることが目標）
 
-- [ ] **Step 2: `calendarService` から関数を削除して移譲する**
+- [x] **Step 2: `calendarService` から関数を削除して移譲する**
 
 `src/domain/services/calendarService.ts` の先頭 import に追加:
 
@@ -282,7 +282,7 @@ import {
       }
 ```
 
-- [ ] **Step 3: `xpService` の import を差し替える**
+- [x] **Step 3: `xpService` の import を差し替える**
 
 `src/domain/services/xpService.ts:3` を次のように変更:
 
@@ -299,18 +299,18 @@ import { isActiveOnDate, isCountedAsTargetOnDate } from './habitScheduleService'
     );
 ```
 
-- [ ] **Step 4: 既存テストの import を修正する**
+- [x] **Step 4: 既存テストの import を修正する**
 
 `src/domain/services/__tests__/calendarService.test.ts` から `isHabitActiveOnDate` /
 `isHabitDueOnDate` の import と、それらの `describe` ブロックを削除する（同等のテストは
 Task 1.1 で `habitScheduleService.test.ts` に存在する）。
 
-- [ ] **Step 5: 全テストが通ることを確認**
+- [x] **Step 5: 全テストが通ることを確認**
 
 Run: `npm test`
 Expected: PASS。特に `xpService.test.ts` の結果が Step 1 と一致すること（挙動を変えていないため）
 
-- [ ] **Step 6: コミット**
+- [x] **Step 6: コミット**
 
 ```bash
 git add src/domain/services/
@@ -328,7 +328,7 @@ git commit -m "refactor: calendarService と xpService を habitScheduleService 
 **Interfaces:**
 - Consumes: Task 1.1 の `isActiveOnDate` / `isListedOnDate`
 
-- [ ] **Step 1: 失敗するテストを書く**
+- [x] **Step 1: 失敗するテストを書く**
 
 `src/ui/pages/__tests__/TodayPage.test.tsx` の既存の `describe` に追加する。
 既存ファイルのモック構成（`useRepositories` / `useHabits` / `useCompletions` のモック）を
@@ -376,12 +376,12 @@ git commit -m "refactor: calendarService と xpService を habitScheduleService 
 `makeHabit` と `renderTodayPage` がファイルに未定義なら、既存のテストが使っている
 セットアップに合わせてヘルパーを追加すること。
 
-- [ ] **Step 2: テストが失敗することを確認**
+- [x] **Step 2: テストが失敗することを確認**
 
 Run: `npx vitest run src/ui/pages/__tests__/TodayPage.test.tsx`
 Expected: FAIL — 作成日前のテストで「後から追加した習慣」が表示されてしまう
 
-- [ ] **Step 3: `TodayPage` を修正する**
+- [x] **Step 3: `TodayPage` を修正する**
 
 `src/ui/pages/TodayPage.tsx:18` の import を差し替える:
 
@@ -402,19 +402,19 @@ import { isActiveOnDate, isListedOnDate } from '@/domain/services/habitScheduleS
   );
 ```
 
-- [ ] **Step 4: `frequencyService.isDueOnDate` を削除する**
+- [x] **Step 4: `frequencyService.isDueOnDate` を削除する**
 
 `src/domain/services/frequencyService.ts` の `isDueOnDate`（12-23 行）と、
 使われなくなった `Habit` 以外の import を削除する。`getWeeklyProgress` は残す。
 `src/domain/services/__tests__/frequencyService.test.ts` から `isDueOnDate` の
 `describe` ブロックを削除する。
 
-- [ ] **Step 5: 全テストが通ることを確認**
+- [x] **Step 5: 全テストが通ることを確認**
 
 Run: `npm test && npm run typecheck && npm run lint`
 Expected: すべて PASS。`isDueOnDate` の未解決参照が残っていないこと
 
-- [ ] **Step 6: コミット**
+- [x] **Step 6: コミット**
 
 ```bash
 git add src/ui/pages/TodayPage.tsx src/ui/pages/__tests__/TodayPage.test.tsx src/domain/services/frequencyService.ts src/domain/services/__tests__/frequencyService.test.ts
@@ -426,7 +426,7 @@ git commit -m "fix: 過去日に作成前の習慣が表示される問題を修
 **Files:**
 - Modify: `e2e/specs/past-completion.spec.ts`
 
-- [ ] **Step 1: E2E テストを追加する**
+- [x] **Step 1: E2E テストを追加する**
 
 `e2e/specs/past-completion.spec.ts` に追加。既存ファイルの `test.describe` と
 `e2e/helpers/test-data.ts` のシード関数をそのまま使うこと。
@@ -446,12 +446,12 @@ git commit -m "fix: 過去日に作成前の習慣が表示される問題を修
   });
 ```
 
-- [ ] **Step 2: E2E を実行する**
+- [x] **Step 2: E2E を実行する**
 
 Run: `npm run test:e2e -- past-completion`
 Expected: PASS
 
-- [ ] **Step 3: コミット**
+- [x] **Step 3: コミット**
 
 ```bash
 git add e2e/specs/past-completion.spec.ts
@@ -1790,7 +1790,81 @@ git add api/send-reminders.ts api/__tests__/send-reminders.test.ts
 git commit -m "fix: リマインダー判定をユーザーのタイムゾーン基準に変更"
 ```
 
-### Task 3.6: PR 作成と実機確認
+### Task 3.6: `habitScheduleService.isActiveOnDate` をユーザー TZ 基準にする
+
+**背景:** Phase 1 で追加した `isActiveOnDate` は `habit.createdAt.slice(0, 10)`（UTC 日付）を
+呼び出し元のローカル日付とそのまま比較しており、負の UTC オフセット地域では作成当日の習慣が
+表示されない（`src/domain/services/habitScheduleService.ts` の `TODO(Phase 3)` コメント参照）。
+この Phase で `profiles.timezone` とユーザー TZ 判定の基盤が揃うので、ここで解消する。
+
+**Files:**
+- Modify: `src/domain/services/habitScheduleService.ts`
+- Modify: `src/domain/services/__tests__/habitScheduleService.test.ts`
+- Modify: `src/domain/services/calendarService.ts`（`isActiveOnDate` の呼び出し箇所）
+- Modify: `src/domain/services/xpService.ts`（`isActiveOnDate` の呼び出し箇所）
+- Modify: `src/ui/pages/TodayPage.tsx`（`dueHabits` の呼び出し箇所）
+
+**Interfaces:**
+- Consumes: Task 2.2 の `getLocalDate`、Task 3.2/3.3 で取得可能になる `profiles.timezone`
+
+- [ ] **Step 1: 失敗するテストを書く**
+
+`src/domain/services/__tests__/habitScheduleService.test.ts` の `isActiveOnDate` に、
+UTC の日付をまたぐケースを追加する。例えば `createdAt: '2026-03-10T02:00:00.000Z'`
+（`America/Los_Angeles` ではまだ 2026-03-09 18:00）に対し、
+`isActiveOnDate(habit, '2026-03-09', 'America/Los_Angeles')` が `true` になることを検証する
+（現状の UTC スライス実装では `false` になり、これが本タスクで直す不整合）。
+
+- [ ] **Step 2: テストが失敗することを確認**
+
+Run: `npx vitest run src/domain/services/__tests__/habitScheduleService.test.ts`
+Expected: FAIL — 新しい `timeZone` 引数がシグネチャに存在しない、または UTC スライスのままで
+アサーションが通らない
+
+- [ ] **Step 3: 実装する**
+
+`isActiveOnDate` に `timeZone: string` 引数を追加し、`.slice(0, 10)` の代わりに
+`timeService.getLocalDate` でユーザー TZ のローカル日付へ変換してから比較する:
+
+```ts
+import { getLocalDate } from './timeService';
+
+export function isActiveOnDate(habit: Habit, date: string, timeZone: string): boolean {
+  if (date < getLocalDate(new Date(habit.createdAt), timeZone)) return false;
+
+  if (
+    habit.archivedAt !== null &&
+    date > getLocalDate(new Date(habit.archivedAt), timeZone)
+  ) {
+    return false;
+  }
+
+  return true;
+}
+```
+
+冒頭の `TODO(Phase 3)` コメントは解消したので削除する。
+
+- [ ] **Step 4: 呼び出し元にタイムゾーンを渡す**
+
+`calendarService.calculateDailyAchievements`、`xpService.calculateAllCompleteBonuses`、
+`TodayPage` の `dueHabits` など `isActiveOnDate` を呼んでいる箇所すべてに、
+Task 3.2 の `ProfileRepository` 経由で取得したユーザーの `profiles.timezone`
+（未取得の場合は `getBrowserTimeZone()`）を渡すよう変更する。
+
+- [ ] **Step 5: 全テストが通ることを確認**
+
+Run: `npm test && npm run typecheck`
+Expected: PASS
+
+- [ ] **Step 6: コミット**
+
+```bash
+git add src/domain/services/habitScheduleService.ts src/domain/services/__tests__/habitScheduleService.test.ts src/domain/services/calendarService.ts src/domain/services/xpService.ts src/ui/pages/TodayPage.tsx
+git commit -m "fix: isActiveOnDate をユーザーのタイムゾーン基準に変更"
+```
+
+### Task 3.7: PR 作成と実機確認
 
 - [ ] **Step 1: 全テストを実行**
 
@@ -1817,6 +1891,14 @@ PR 本文に次を明記すること:
 **issue タイトル案:** `feat: 通知パイプラインの診断情報を記録し、設定画面で確認できるようにする`
 
 **背景:** 2026-04-21 に購読が失効してから 2026-07-02 に気づくまで 2 ヶ月半かかった。cron は succeeded、HTTP は 200、関数は正常動作という状態のまま誰にも届かない状況が成立してしまう（`docs/investigations/2026-07-02-push-notification-not-delivered.md`）。
+
+**前提条件:** Task 4.5 / 4.6 は `src/hooks/pushSubscriptionOperations.ts`（`ensureSubscription` と
+`reconcileSubscription` を持つ）に依存する。このファイルは本計画作成時点で未マージのブランチ
+`fix/push-auto-resubscribe` にのみ存在し、`main` には無い。この Phase に着手する前に
+`fix/push-auto-resubscribe` がマージされていることを確認すること。マージされていない場合は、
+Task 4.5 の着手前に `src/hooks/usePushSubscription.ts` の `usePushSubscription` フックから
+`ensureSubscription` を独立した `src/hooks/pushSubscriptionOperations.ts` として切り出す作業を
+先に行う必要がある。
 
 ### Task 4.1: 観測用テーブルのマイグレーション
 
