@@ -38,4 +38,20 @@ test.describe('Past Completion', () => {
     await page.goto('/?date=invalid');
     await expect(page.getByRole('heading', { name: 'Today' })).toBeVisible({ timeout: 10000 });
   });
+
+  test('習慣の作成日より前の日付には、その習慣が表示されない', async ({ page, seedHabit }) => {
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    await seedHabit({ name: '本日作成の習慣', createdAt: `${today}T12:00:00Z` });
+
+    await page.goto('/');
+    await expect(page.getByText('本日作成の習慣')).toBeVisible({ timeout: 10000 });
+
+    await page.getByRole('button', { name: '前の日' }).click();
+
+    await expect(page.getByText('本日作成の習慣')).not.toBeVisible();
+    await expect(
+      page.getByText('この日にやるべきことはありませんでした'),
+    ).toBeVisible({ timeout: 10000 });
+  });
 });
