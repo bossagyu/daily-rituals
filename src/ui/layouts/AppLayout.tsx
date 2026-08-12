@@ -17,9 +17,18 @@ import {
   BottomNavigation,
 } from '@/ui/components/NavigationBar';
 import { useAuthContext } from '@/hooks/useAuthContext';
+import { useRepositories } from '@/hooks/useRepositories';
+import { usePushSubscriptionReconcile } from '@/hooks/usePushSubscriptionReconcile';
 
 export function AppLayout() {
   const { user } = useAuthContext();
+  const { pushSubscriptionRepository } = useRepositories();
+
+  // Reconcile the push subscription once per authenticated session,
+  // regardless of which route the user lands on first. AppLayout wraps
+  // every protected route, so this recovers from iOS silently dropping the
+  // subscription without requiring the user to visit a specific page.
+  usePushSubscriptionReconcile(pushSubscriptionRepository);
 
   if (!user) {
     return null;

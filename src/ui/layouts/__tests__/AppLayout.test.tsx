@@ -8,10 +8,11 @@
  */
 
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import '@testing-library/jest-dom/vitest';
 import { AppLayout } from '../AppLayout';
+import type { PushSubscriptionRepository } from '@/data/repositories/pushSubscriptionRepository';
 
 // Mock useAuthContext to provide a test user
 vi.mock('@/hooks/useAuthContext', () => ({
@@ -26,6 +27,30 @@ vi.mock('@/hooks/useAuthContext', () => ({
     signIn: vi.fn(),
     signOut: vi.fn(),
   }),
+}));
+
+// Mock useRepositories - AppLayout reconciles the push subscription on
+// mount, which requires access to the pushSubscriptionRepository.
+const mockPushSubscriptionRepository: PushSubscriptionRepository = {
+  upsert: vi.fn().mockResolvedValue(undefined),
+  findByEndpoint: vi.fn().mockResolvedValue(null),
+  deleteByEndpoint: vi.fn().mockResolvedValue(undefined),
+};
+
+vi.mock('@/hooks/useRepositories', () => ({
+  useRepositories: () => ({
+    pushSubscriptionRepository: mockPushSubscriptionRepository,
+  }),
+}));
+
+// Mock usePushSubscriptionReconcile so navigation tests below don't touch
+// the real service worker / Notification APIs, and so the wiring test below
+// can assert AppLayout actually invokes it on mount.
+const mockReconcile = vi.fn();
+vi.mock('@/hooks/usePushSubscriptionReconcile', () => ({
+  usePushSubscriptionReconcile: (
+    repository: PushSubscriptionRepository | null,
+  ) => mockReconcile(repository),
 }));
 
 function renderWithRouter(initialRoute = '/') {
@@ -82,5 +107,33 @@ describe('AppLayout', () => {
     renderWithRouter();
     const main = screen.getByRole('main');
     expect(main).toBeInTheDocument();
+  });
+});
+
+describe('AppLayout push subscription reconciliation', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  // Regression test for the case where usePushSubscription (and therefore
+  // reconcileSubscription) was only wired into NewHabitPage/HabitDetailPage,
+  // so a user landing on any other route (e.g. the default "/" Today page)
+  // never triggered a re-subscribe after iOS silently dropped the
+  // subscription. AppLayout wraps every authenticated route, so reconciling
+  // here guarantees it runs once per session regardless of the landing page.
+  it('reconciles the push subscription on mount, regardless of route', async () => {
+    renderWithRouter('/');
+
+    await waitFor(() => {
+      expect(mockReconcile).toHaveBeenCalledWith(mockPushSubscriptionRepository);
+    });
+  });
+
+  it('reconciles the push subscription even when landing on a non-default route', async () => {
+    renderWithRouter('/calendar');
+
+    await waitFor(() => {
+      expect(mockReconcile).toHaveBeenCalledWith(mockPushSubscriptionRepository);
+    });
   });
 });

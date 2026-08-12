@@ -88,16 +88,21 @@ CREATE POLICY "Users can manage own subscriptions"
   USING (auth.uid() = user_id)
   WITH CHECK (auth.uid() = user_id);
 
--- pg_cronジョブの設定（10分ごとにEdge Functionを呼び出し）
+-- pg_cronジョブの設定（10分ごとにVercel API Routeを呼び出し）
+-- 注意: #73 で送信処理を Vercel API Route (Node.js) に移行し、
+--       #74 で Edge Function を削除済み。呼び出し先とヘッダーが以下に変わっている:
+--   - url: <VERCEL_APP_URL>/api/send-reminders （旧: <SUPABASE_URL>/functions/v1/send-reminders）
+--   - 認証: x-cron-secret ヘッダー （旧: Authorization: Bearer <SERVICE_ROLE_KEY>）
+-- 実際に適用する SQL は supabase/snippets/setup-cron.sql を参照。
 SELECT cron.schedule(
   'send-reminders',
   '*/10 * * * *',
   $$
   SELECT net.http_post(
-    url := '<SUPABASE_URL>/functions/v1/send-reminders',
+    url := 'https://<VERCEL_APP_URL>/api/send-reminders',
     headers := jsonb_build_object(
-      'Authorization', 'Bearer <SUPABASE_SERVICE_ROLE_KEY>',
-      'Content-Type', 'application/json'
+      'Content-Type', 'application/json',
+      'x-cron-secret', '<CRON_SECRET>'
     ),
     body := '{}'::jsonb
   );
