@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { PushSubscriptionRepository } from '../data/repositories/pushSubscriptionRepository';
 import { ensureSubscription as ensureSubscriptionOp } from './pushSubscriptionOperations';
-import { usePushSubscriptionReconcile } from './usePushSubscriptionReconcile';
 import { hasServiceWorker } from './utils';
 
 export type UsePushSubscriptionReturn = {
@@ -10,6 +9,18 @@ export type UsePushSubscriptionReturn = {
   readonly ensureSubscription: () => Promise<void>;
 };
 
+/**
+ * Manages notification permission state and exposes an explicit
+ * `ensureSubscription` for user-initiated subscribe actions (e.g. enabling a
+ * habit reminder).
+ *
+ * This hook does NOT reconcile the push subscription itself — that runs
+ * once at the app root via `usePushSubscriptionReconcile` in `AppLayout`,
+ * which wraps every authenticated route. Calling it again here would race
+ * with the AppLayout instance when a page using this hook is the initial
+ * landing route (e.g. a deep link to `/habits/:id`), since both would mount
+ * together and reconcile the same repository concurrently.
+ */
 export function usePushSubscription(
   repository: PushSubscriptionRepository | null,
 ): UsePushSubscriptionReturn {
@@ -22,11 +33,6 @@ export function usePushSubscription(
       setPermissionState(Notification.permission);
     }
   }, []);
-
-  // Reconcile the device subscription on mount (best-effort). Also mounted
-  // unconditionally at the app root (AppLayout) so it runs even when this
-  // hook itself isn't — see usePushSubscriptionReconcile for details.
-  usePushSubscriptionReconcile(repository);
 
   const requestPermission = useCallback(async (): Promise<boolean> => {
     if (typeof Notification === 'undefined') return false;
