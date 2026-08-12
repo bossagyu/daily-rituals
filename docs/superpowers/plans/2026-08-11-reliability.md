@@ -1892,13 +1892,14 @@ PR 本文に次を明記すること:
 
 **背景:** 2026-04-21 に購読が失効してから 2026-07-02 に気づくまで 2 ヶ月半かかった。cron は succeeded、HTTP は 200、関数は正常動作という状態のまま誰にも届かない状況が成立してしまう（`docs/investigations/2026-07-02-push-notification-not-delivered.md`）。
 
-**前提条件:** Task 4.5 / 4.6 は `src/hooks/pushSubscriptionOperations.ts`（`ensureSubscription` と
-`reconcileSubscription` を持つ）に依存する。このファイルは本計画作成時点で未マージのブランチ
-`fix/push-auto-resubscribe` にのみ存在し、`main` には無い。この Phase に着手する前に
-`fix/push-auto-resubscribe` がマージされていることを確認すること。マージされていない場合は、
-Task 4.5 の着手前に `src/hooks/usePushSubscription.ts` の `usePushSubscription` フックから
-`ensureSubscription` を独立した `src/hooks/pushSubscriptionOperations.ts` として切り出す作業を
-先に行う必要がある。
+**前提条件（充足済み）:** Task 4.5 / 4.6 は `src/hooks/pushSubscriptionOperations.ts`
+（`ensureSubscription` と `reconcileSubscription` を持つ）に依存する。このファイルは本計画作成時点では
+未マージのブランチ `fix/push-auto-resubscribe` にしか存在しなかったが、2026-08-12 に PR #142 が
+マージされ `main` で利用可能になった。追加の前準備は不要である。
+
+なお PR #142 のレビューで、起動時の再購読は `src/hooks/usePushSubscriptionReconcile.ts` に切り出され、
+認証済み全ルートを包む `src/ui/layouts/AppLayout.tsx:31` から呼ばれる形に変更された。Task 3.3 で
+`useTimezoneSync` を `AppLayout` に足す際は、この既存の呼び出しの隣に並べること。
 
 ### Task 4.1: 観測用テーブルのマイグレーション
 

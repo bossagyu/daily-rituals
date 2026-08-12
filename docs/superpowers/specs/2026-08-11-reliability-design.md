@@ -241,13 +241,13 @@ export function isCountedAsTargetOnDate(habit: Habit, date: string): boolean // 
 「再登録」は `pushSubscriptionOperations.ensureSubscription` を明示的に呼ぶ。
 これにより、調査ドキュメント 5 章の復旧手順（習慣のリマインダーを OFF→ON し直す）が不要になる。
 
-**依存関係の注記:** `pushSubscriptionOperations` モジュール（`src/hooks/pushSubscriptionOperations.ts`、
-`ensureSubscription` と `reconcileSubscription` を持つ）は、本スペック作成時点で未マージのブランチ
-`fix/push-auto-resubscribe` に存在する。`main` には現時点でこのファイルは無く、`ensureSubscription`
-は `src/hooks/usePushSubscription.ts` の `usePushSubscription` フックが返すメンバーとしてのみ
-存在する。この診断 UI（Phase 4）を実装する時点で `fix/push-auto-resubscribe` がマージ済みで
-なければ、`ensureSubscription` をフックから切り出して単独の `pushSubscriptionOperations.ts` に
-する作業が Phase 4 の前提として必要になる。
+**依存関係の注記（解消済み）:** `pushSubscriptionOperations` モジュール
+（`src/hooks/pushSubscriptionOperations.ts`、`ensureSubscription` と `reconcileSubscription` を持つ）は、
+本スペック作成時点では未マージのブランチ `fix/push-auto-resubscribe` にしか存在しなかった。
+2026-08-12 に PR #142 がマージされ、`main` で利用可能になっている。あわせて、起動時の再購読は
+`src/hooks/usePushSubscriptionReconcile.ts` として切り出され、認証済み全ルートを包む
+`src/ui/layouts/AppLayout.tsx` から呼ばれる。したがって診断 UI（Phase 4）の「再登録」導線は
+`ensureSubscription` をそのまま利用できる。
 
 **完了トグルの失敗ハンドリング（P4）**
 
