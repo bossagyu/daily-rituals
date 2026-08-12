@@ -17,20 +17,38 @@ import { DuplicateRewardLevelError } from '@/data/repositories/rewardRepository'
 import type { Reward } from '@/domain/models';
 
 // --- Mock repository ---
-
-const mockFindAll = vi.fn();
-const mockCreate = vi.fn();
-const mockUpdate = vi.fn();
-const mockRemove = vi.fn();
+//
+// The rewardRepository object identity must stay stable across renders.
+// RewardsPage's data-fetch useEffect depends on [rewardRepository], so if
+// this mock returned a fresh object literal on every call, the effect would
+// re-run on every render (setting isLoading -> unmounting RewardItem ->
+// losing its isEditing state), causing intermittent test failures. Using
+// vi.hoisted keeps a single shared object across the whole test file while
+// still allowing vi.clearAllMocks()/mockResolvedValue() in beforeEach to work
+// as before.
+const { mockFindAll, mockCreate, mockUpdate, mockRemove, mockRewardRepository } =
+  vi.hoisted(() => {
+    const mockFindAll = vi.fn();
+    const mockCreate = vi.fn();
+    const mockUpdate = vi.fn();
+    const mockRemove = vi.fn();
+    return {
+      mockFindAll,
+      mockCreate,
+      mockUpdate,
+      mockRemove,
+      mockRewardRepository: {
+        findAll: mockFindAll,
+        create: mockCreate,
+        update: mockUpdate,
+        remove: mockRemove,
+      },
+    };
+  });
 
 vi.mock('@/hooks/useRepositories', () => ({
   useRepositories: () => ({
-    rewardRepository: {
-      findAll: mockFindAll,
-      create: mockCreate,
-      update: mockUpdate,
-      remove: mockRemove,
-    },
+    rewardRepository: mockRewardRepository,
   }),
 }));
 
