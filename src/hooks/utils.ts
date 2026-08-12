@@ -22,3 +22,10 @@ export function isRlsError(err: unknown): boolean {
   const code = (err as Record<string, unknown>).code;
   return code === RLS_VIOLATION_CODE;
 }
+
+/**
+ * Checks whether the current browser supports the Service Worker API.
+ */
+export function hasServiceWorker(): boolean {
+  return typeof navigator !== 'undefined' && 'serviceWorker' in navigator;
+}

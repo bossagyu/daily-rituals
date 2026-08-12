@@ -1,19 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { PushSubscriptionRepository } from '../data/repositories/pushSubscriptionRepository';
-import {
-  reconcileSubscription,
-  ensureSubscription as ensureSubscriptionOp,
-} from './pushSubscriptionOperations';
+import { ensureSubscription as ensureSubscriptionOp } from './pushSubscriptionOperations';
+import { usePushSubscriptionReconcile } from './usePushSubscriptionReconcile';
+import { hasServiceWorker } from './utils';
 
 export type UsePushSubscriptionReturn = {
   readonly permissionState: NotificationPermission;
   readonly requestPermission: () => Promise<boolean>;
   readonly ensureSubscription: () => Promise<void>;
 };
-
-function hasServiceWorker(): boolean {
-  return typeof navigator !== 'undefined' && 'serviceWorker' in navigator;
-}
 
 export function usePushSubscription(
   repository: PushSubscriptionRepository | null,
@@ -28,25 +23,10 @@ export function usePushSubscription(
     }
   }, []);
 
-  // Reconcile the device subscription on app load (best-effort). This also
-  // re-subscribes when iOS has silently dropped the subscription, as long as
-  // notification permission is already granted.
-  useEffect(() => {
-    if (!repository || !hasServiceWorker()) return;
-
-    async function reconcile() {
-      try {
-        const registration = await navigator.serviceWorker.ready;
-        const permission =
-          typeof Notification !== 'undefined' ? Notification.permission : 'default';
-        await reconcileSubscription(registration, repository!, permission);
-      } catch {
-        // Silent failure — reconciliation is best-effort.
-      }
-    }
-
-    void reconcile();
-  }, [repository]);
+  // Reconcile the device subscription on mount (best-effort). Also mounted
+  // unconditionally at the app root (AppLayout) so it runs even when this
+  // hook itself isn't — see usePushSubscriptionReconcile for details.
+  usePushSubscriptionReconcile(repository);
 
   const requestPermission = useCallback(async (): Promise<boolean> => {
     if (typeof Notification === 'undefined') return false;
