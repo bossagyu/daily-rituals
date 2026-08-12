@@ -15,7 +15,7 @@ import { useHabits } from '@/hooks/useHabits';
 import { useCompletions } from '@/hooks/useCompletions';
 import { useStreak } from '@/hooks/useStreak';
 import { useTasks } from '@/hooks/useTasks';
-import { isDueOnDate } from '@/domain/services/frequencyService';
+import { isActiveOnDate, isListedOnDate } from '@/domain/services/habitScheduleService';
 import { TodayHabitCard } from '@/ui/components/TodayHabitCard';
 import { TaskCard } from '@/ui/components/TaskCard';
 import { TaskInlineInput } from '@/ui/components/TaskInlineInput';
@@ -274,14 +274,14 @@ export function TodayPage() {
     uncompleteTask,
   } = useTasks(taskRepository, selectedDate);
 
-  const dueHabits = useMemo(() => {
-    const selectedDateObj = new Date(
-      Number(selectedDate.slice(0, 4)),
-      Number(selectedDate.slice(5, 7)) - 1,
-      Number(selectedDate.slice(8, 10)),
-    );
-    return habits.filter((habit) => isDueOnDate(habit, selectedDateObj));
-  }, [habits, selectedDate]);
+  const dueHabits = useMemo(
+    () =>
+      habits.filter(
+        (habit) =>
+          isActiveOnDate(habit, selectedDate) && isListedOnDate(habit, selectedDate),
+      ),
+    [habits, selectedDate],
+  );
 
   const todayItems = useMemo(
     () => buildTodayItems(dueHabits, tasks, isCompleted, selectedDate),

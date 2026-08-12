@@ -1,6 +1,7 @@
 import type { Habit } from '@/domain/models/habit';
 import type { Completion } from '@/domain/models/completion';
-import { isHabitDueOnDate, isHabitActiveOnDate, addDays } from './calendarService';
+import { addDays } from './calendarService';
+import { isActiveOnDate, isCountedAsTargetOnDate } from './habitScheduleService';
 
 // --- Types ---
 
@@ -133,7 +134,7 @@ export function calculateAllCompleteBonuses(
 
     // Find habits that are due on this date (daily + weekly_days only)
     const dueHabits = habits.filter(
-      (h) => isHabitActiveOnDate(h, current) && isHabitDueOnDate(h, current),
+      (h) => isActiveOnDate(h, current) && isCountedAsTargetOnDate(h, current),
     );
 
     if (dueHabits.length > 0) {

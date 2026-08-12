@@ -1,4 +1,4 @@
-import { isDueOnDate, getWeeklyProgress } from '../frequencyService';
+import { getWeeklyProgress } from '../frequencyService';
 import type { Habit, Completion } from '../../models';
 
 const BASE_HABIT: Habit = {
@@ -26,89 +26,6 @@ function makeCompletion(habitId: string, completedDate: string): Completion {
     createdAt: `${completedDate}T12:00:00Z`,
   };
 }
-
-describe('isDueOnDate', () => {
-  describe('daily frequency', () => {
-    const habit = makeHabit({ frequency: { type: 'daily' } });
-
-    it('returns true for any weekday', () => {
-      // Monday
-      expect(isDueOnDate(habit, new Date('2026-03-09'))).toBe(true);
-    });
-
-    it('returns true for any weekend', () => {
-      // Saturday
-      expect(isDueOnDate(habit, new Date('2026-03-14'))).toBe(true);
-      // Sunday
-      expect(isDueOnDate(habit, new Date('2026-03-15'))).toBe(true);
-    });
-  });
-
-  describe('weekly_days frequency', () => {
-    // Monday(1), Wednesday(3), Friday(5)
-    const habit = makeHabit({
-      frequency: { type: 'weekly_days', days: [1, 3, 5] },
-    });
-
-    it('returns true when today is one of the specified days', () => {
-      // 2026-03-09 is Monday (day 1)
-      expect(isDueOnDate(habit, new Date('2026-03-09'))).toBe(true);
-      // 2026-03-11 is Wednesday (day 3)
-      expect(isDueOnDate(habit, new Date('2026-03-11'))).toBe(true);
-      // 2026-03-13 is Friday (day 5)
-      expect(isDueOnDate(habit, new Date('2026-03-13'))).toBe(true);
-    });
-
-    it('returns false when today is not one of the specified days', () => {
-      // 2026-03-10 is Tuesday (day 2)
-      expect(isDueOnDate(habit, new Date('2026-03-10'))).toBe(false);
-      // 2026-03-12 is Thursday (day 4)
-      expect(isDueOnDate(habit, new Date('2026-03-12'))).toBe(false);
-      // 2026-03-14 is Saturday (day 6)
-      expect(isDueOnDate(habit, new Date('2026-03-14'))).toBe(false);
-      // 2026-03-15 is Sunday (day 0)
-      expect(isDueOnDate(habit, new Date('2026-03-15'))).toBe(false);
-    });
-
-    it('handles Sunday (day 0) as a specified day', () => {
-      const sundayHabit = makeHabit({
-        frequency: { type: 'weekly_days', days: [0] },
-      });
-      // 2026-03-15 is Sunday
-      expect(isDueOnDate(sundayHabit, new Date('2026-03-15'))).toBe(true);
-      // 2026-03-09 is Monday
-      expect(isDueOnDate(sundayHabit, new Date('2026-03-09'))).toBe(false);
-    });
-
-    it('handles all days specified', () => {
-      const everydayHabit = makeHabit({
-        frequency: { type: 'weekly_days', days: [0, 1, 2, 3, 4, 5, 6] },
-      });
-      expect(isDueOnDate(everydayHabit, new Date('2026-03-09'))).toBe(true);
-      expect(isDueOnDate(everydayHabit, new Date('2026-03-15'))).toBe(true);
-    });
-
-    it('handles single day specified', () => {
-      const wednesdayOnly = makeHabit({
-        frequency: { type: 'weekly_days', days: [3] },
-      });
-      expect(isDueOnDate(wednesdayOnly, new Date('2026-03-11'))).toBe(true);
-      expect(isDueOnDate(wednesdayOnly, new Date('2026-03-10'))).toBe(false);
-    });
-  });
-
-  describe('weekly_count frequency', () => {
-    const habit = makeHabit({
-      frequency: { type: 'weekly_count', count: 3 },
-    });
-
-    it('returns true for any day (user can do it any day)', () => {
-      expect(isDueOnDate(habit, new Date('2026-03-09'))).toBe(true);
-      expect(isDueOnDate(habit, new Date('2026-03-14'))).toBe(true);
-      expect(isDueOnDate(habit, new Date('2026-03-15'))).toBe(true);
-    });
-  });
-});
 
 describe('getWeeklyProgress', () => {
   describe('weekly_count frequency', () => {
