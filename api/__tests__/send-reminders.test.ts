@@ -3,7 +3,8 @@ import {
   buildNotificationBody,
   isWeeklyCountMet,
   isScheduledToday,
-  getUtcTimeSlot,
+  buildUserContext,
+  selectHabitsToNotify,
   type HabitRow,
 } from '../send-reminders';
 
@@ -15,6 +16,7 @@ const baseHabit: HabitRow = {
   frequency_value: null,
   reminder_time: '09:00:00',
   last_notified_date: null,
+  timezone: 'Asia/Tokyo',
 };
 
 describe('buildNotificationBody', () => {
@@ -146,16 +148,100 @@ describe('isScheduledToday', () => {
   });
 });
 
-describe('getUtcTimeSlot', () => {
-  it('returns the slot unchanged when already on a boundary', () => {
-    expect(getUtcTimeSlot(new Date('2026-08-13T09:10:00Z'))).toBe('09:10');
+function makeHabitRow(overrides: Partial<HabitRow> = {}): HabitRow {
+  return {
+    id: 'h1',
+    user_id: 'u1',
+    name: '日記',
+    frequency_type: 'daily',
+    frequency_value: null,
+    reminder_time: '07:00:00',
+    last_notified_date: null,
+    timezone: 'Asia/Tokyo',
+    ...overrides,
+  };
+}
+
+describe('buildUserContext', () => {
+  it('UTC 22:00 は東京では翌日 07:00', () => {
+    const ctx = buildUserContext(new Date('2026-03-11T22:00:00Z'), 'Asia/Tokyo');
+    expect(ctx.today).toBe('2026-03-12');
+    expect(ctx.slot).toBe('07:00');
+    expect(ctx.dayOfWeek).toBe(4); // 木曜
+    expect(ctx.weekStart).toBe('2026-03-08');
   });
 
-  it('floors mid-slot minutes down to the slot boundary', () => {
-    expect(getUtcTimeSlot(new Date('2026-08-13T09:14:59Z'))).toBe('09:10');
+  it('10 分スロットに切り捨てる', () => {
+    const ctx = buildUserContext(new Date('2026-03-11T22:07:00Z'), 'Asia/Tokyo');
+    expect(ctx.slot).toBe('07:00');
   });
 
-  it('handles the end-of-day 23:5x slot without rolling over the hour', () => {
-    expect(getUtcTimeSlot(new Date('2026-08-13T23:59:59Z'))).toBe('23:50');
+  it('不正なタイムゾーンは Asia/Tokyo にフォールバックする', () => {
+    const ctx = buildUserContext(new Date('2026-03-11T22:00:00Z'), 'Not/AZone');
+    expect(ctx.today).toBe('2026-03-12');
+  });
+});
+
+describe('selectHabitsToNotify', () => {
+  const instant = new Date('2026-03-11T22:00:00Z'); // 東京 03-12 木 07:00
+
+  it('リマインダー時刻を過ぎた未完了の習慣を選ぶ', () => {
+    const result = selectHabitsToNotify(
+      [makeHabitRow()],
+      instant,
+      new Set(),
+      new Map(),
+    );
+    expect(result.map((h) => h.id)).toEqual(['h1']);
+  });
+
+  it('まだ時刻前の習慣は選ばない', () => {
+    const habit = makeHabitRow({ reminder_time: '08:00:00' });
+    expect(selectHabitsToNotify([habit], instant, new Set(), new Map())).toEqual([]);
+  });
+
+  it('ユーザーのローカル今日で通知済みなら選ばない', () => {
+    const habit = makeHabitRow({ last_notified_date: '2026-03-12' });
+    expect(selectHabitsToNotify([habit], instant, new Set(), new Map())).toEqual([]);
+  });
+
+  it('UTC 日付で通知済みでも、ローカル今日が違えば選ぶ', () => {
+    // UTC では 03-11 だが東京では 03-12。UTC 基準の実装だとここで誤ってスキップする
+    const habit = makeHabitRow({ last_notified_date: '2026-03-11' });
+    expect(selectHabitsToNotify([habit], instant, new Set(), new Map()).map((h) => h.id))
+      .toEqual(['h1']);
+  });
+
+  it('完了済みの習慣は選ばない', () => {
+    expect(
+      selectHabitsToNotify([makeHabitRow()], instant, new Set(['h1']), new Map()),
+    ).toEqual([]);
+  });
+
+  it('weekly_days は当日が対象曜日でなければ選ばない', () => {
+    const habit = makeHabitRow({
+      frequency_type: 'weekly_days',
+      frequency_value: { days: [1] }, // 月曜のみ
+    });
+    expect(selectHabitsToNotify([habit], instant, new Set(), new Map())).toEqual([]);
+  });
+
+  it('weekly_count は今週の目標を満たしていれば選ばない', () => {
+    const habit = makeHabitRow({
+      frequency_type: 'weekly_count',
+      frequency_value: { count: 3 },
+    });
+    const weeklyCounts = new Map([['h1', 3]]);
+    expect(selectHabitsToNotify([habit], instant, new Set(), weeklyCounts)).toEqual([]);
+  });
+
+  it('weekly_count は目標未達なら選ぶ', () => {
+    const habit = makeHabitRow({
+      frequency_type: 'weekly_count',
+      frequency_value: { count: 3 },
+    });
+    const weeklyCounts = new Map([['h1', 2]]);
+    expect(selectHabitsToNotify([habit], instant, new Set(), weeklyCounts).map((h) => h.id))
+      .toEqual(['h1']);
   });
 });
