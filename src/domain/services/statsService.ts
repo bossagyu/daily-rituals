@@ -6,7 +6,7 @@
  */
 
 import type { DayAchievement } from './calendarService';
-import { addDays } from './calendarService';
+import { addDays } from './timeService';
 
 export type DateRange = {
   readonly start: string;

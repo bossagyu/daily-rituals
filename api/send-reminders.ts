@@ -9,7 +9,7 @@
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import webpush from 'web-push';
 
 // --- Constants ---
@@ -144,7 +144,7 @@ type SendResult = {
 async function sendNotificationsPerUser(
   habitsByUser: ReadonlyMap<string, readonly string[]>,
   incompleteHabits: readonly HabitRow[],
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseClient,
 ): Promise<SendResult> {
   let totalSent = 0;
   let notifiedHabitIds: readonly string[] = [];

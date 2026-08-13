@@ -4,6 +4,7 @@ import {
   isActiveOnDate,
   isCountedAsTargetOnDate,
 } from './habitScheduleService';
+import { addDays } from './timeService';
 
 const DAYS_IN_WEEK = 7;
 const WEEKS_IN_GRID = 6;
@@ -95,12 +96,6 @@ export type DayAchievement = {
   readonly completedHabitNames: readonly string[];
   readonly isTargetDay: boolean;
 };
-
-export function addDays(dateStr: string, days: number): string {
-  const d = new Date(dateStr + 'T00:00:00');
-  d.setDate(d.getDate() + days);
-  return `${d.getFullYear()}-${padTwo(d.getMonth() + 1)}-${padTwo(d.getDate())}`;
-}
 
 export function calculateDailyAchievements(
   habits: readonly Habit[],
