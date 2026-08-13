@@ -13,7 +13,17 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
-      registerType: 'autoUpdate',
+      // 'prompt' (not 'autoUpdate'): vite-plugin-pwa's own client-side
+      // registerSW() bundles an unconditional `window.location.reload()` on
+      // SW activation whenever registerType is 'autoUpdate' — regardless of
+      // what options are passed to registerSW() in src/main.tsx. The user
+      // has explicitly declined both auto-reload and an update-available
+      // prompt. 'prompt' disables that built-in reload wiring; since
+      // onNeedRefresh is never passed from src/main.tsx, no prompt is shown
+      // either. Detection (main.tsx's registerSW()/registration.update())
+      // and background activation (src/sw.ts's skipWaiting()/clients.claim())
+      // are untouched by this setting — see comments there.
+      registerType: 'prompt',
       strategies: 'injectManifest',
       srcDir: 'src',
       filename: 'sw.ts',

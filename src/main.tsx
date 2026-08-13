@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { registerSW } from 'virtual:pwa-register';
 import { App } from './App';
+import { shouldRunUpdateCheck } from './lib/swUpdateCheck';
 import './index.css';
 
 const rootElement = document.getElementById('root');
@@ -36,13 +37,16 @@ const PERIODIC_UPDATE_CHECK_INTERVAL_MS = 60 * 60 * 1000;
 const MIN_VISIBILITY_UPDATE_CHECK_GAP_MS = 60 * 1000;
 
 // Registers the Service Worker and drives periodic update checks so the
-// browser actually notices new deploys (see vite.config.ts's
-// registerType: 'autoUpdate', which otherwise only takes effect once
-// registerSW() is called). Detecting an update here does NOT reload the
-// page or show an "update available" prompt by design — the user does not
-// want to be interrupted. skipWaiting()/clients.claim() in src/sw.ts mean a
-// detected update activates in the background and is picked up transparently
-// on the next natural load/navigation.
+// browser actually notices new deploys. This alone does not make the app
+// disruptive: vite.config.ts sets registerType: 'prompt' (NOT 'autoUpdate'),
+// specifically because vite-plugin-pwa's built-in 'autoUpdate' client wiring
+// forces an unconditional window.location.reload() on activation regardless
+// of what's passed to registerSW() here. 'prompt' disables that reload, and
+// since onNeedRefresh is never passed below, no "update available" prompt is
+// shown either — the user explicitly declined both. skipWaiting()/
+// clients.claim() in src/sw.ts still activate a detected update in the
+// background; it's simply picked up transparently on the next natural
+// load/navigation, never forced mid-session.
 registerSW({
   onRegisteredSW(_swUrl, registration) {
     if (!registration) {
@@ -52,7 +56,12 @@ registerSW({
     let lastCheckAt = Date.now();
     const checkForUpdate = () => {
       lastCheckAt = Date.now();
-      void registration.update();
+      // registration.update() rejects when the request for sw.js fails
+      // (e.g. offline, which is a routine state on a phone) — swallow it so
+      // that doesn't surface as an unhandled promise rejection on every
+      // hourly tick / foreground resume. There is no error-reporting sink
+      // in this codebase to forward it to instead.
+      void registration.update().catch(() => {});
     };
 
     setInterval(checkForUpdate, PERIODIC_UPDATE_CHECK_INTERVAL_MS);
@@ -61,7 +70,7 @@ registerSW({
       if (document.visibilityState !== 'visible') {
         return;
       }
-      if (Date.now() - lastCheckAt < MIN_VISIBILITY_UPDATE_CHECK_GAP_MS) {
+      if (!shouldRunUpdateCheck(Date.now(), lastCheckAt, MIN_VISIBILITY_UPDATE_CHECK_GAP_MS)) {
         return;
       }
       checkForUpdate();
