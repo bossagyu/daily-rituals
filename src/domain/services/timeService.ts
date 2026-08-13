@@ -5,7 +5,6 @@
  * ただし現時点ではまだ以下がこのモジュールの外にあり、集約は完了していない：
  * - api/send-reminders.ts の getTodayUtc()（Phase 3 で吸収予定）
  * - src/hooks/useCalendarData.ts の年/月ベースのローカル日付取得（別形状のため未着手・移行時期未定）
- * - src/lib/reminderTime.ts の getBrowserTimezoneOffset()（Phase 3 で吸収予定）
  *
  * クライアント（src/）と Vercel API Route（api/）の双方がこのファイルを参照する。
  *

@@ -22,16 +22,6 @@ function toTimeString(hours: number, minutes: number): string {
   return `${pad(Math.floor(normalizedMinutes / MINUTES_PER_HOUR))}:${pad(normalizedMinutes % MINUTES_PER_HOUR)}`;
 }
 
-export function localTimeToUtc(localTime: string, offsetMinutes: number): string {
-  const { hours, minutes } = parseTime(localTime);
-  return toTimeString(hours, minutes - offsetMinutes);
-}
-
-export function utcToLocalTime(utcTime: string, offsetMinutes: number): string {
-  const { hours, minutes } = parseTime(utcTime);
-  return toTimeString(hours, minutes + offsetMinutes);
-}
-
 export function roundToTenMinutes(time: string): string {
   const { hours, minutes } = parseTime(time);
   const rounded = Math.floor(minutes / INTERVAL_MINUTES) * INTERVAL_MINUTES;
@@ -47,8 +37,4 @@ export function generateTimeOptions(): string[] {
     }
   }
   return options;
-}
-
-export function getBrowserTimezoneOffset(): number {
-  return new Date().getTimezoneOffset() * -1;
 }
