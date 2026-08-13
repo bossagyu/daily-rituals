@@ -1,8 +1,13 @@
 /**
  * timeService - タイムゾーンを明示的に受け取る日付・時刻の純粋関数群。
  *
- * このアプリにおける「今日」「今の時刻」の定義はすべてここに集約する。
- * クライアント（src/）と Vercel API Route（api/）の双方がこのファイルだけを参照する。
+ * このアプリにおける「今日」「今の時刻」の定義をここに集約していくのが目標状態。
+ * ただし現時点ではまだ以下がこのモジュールの外にあり、集約は完了していない：
+ * - api/send-reminders.ts の getTodayUtc()（Phase 3 で吸収予定）
+ * - src/hooks/useCalendarData.ts の年/月ベースのローカル日付取得（別形状のため未着手・移行時期未定）
+ * - src/lib/reminderTime.ts の getBrowserTimezoneOffset()（Phase 3 で吸収予定）
+ *
+ * クライアント（src/）と Vercel API Route（api/）の双方がこのファイルを参照する。
  *
  * 実装は Intl.DateTimeFormat ベースであり、分オフセット（getTimezoneOffset）を
  * 使わない。これにより DST が自動的に正しく扱われる。
@@ -10,8 +15,6 @@
 
 const DATE_FORMATTERS = new Map<string, Intl.DateTimeFormat>();
 const TIME_FORMATTERS = new Map<string, Intl.DateTimeFormat>();
-
-const MINUTES_PER_HOUR = 60;
 
 function pad(n: number): string {
   return String(n).padStart(2, '0');
@@ -86,9 +89,18 @@ export function getLocalDayOfWeek(instant: Date, timeZone: string): number {
 /**
  * 指定タイムゾーンにおける、その瞬間が属する週の開始日（日曜）を返す。
  *
- * 日曜始まりはカレンダーグリッドおよび statsService.getWeekRange と揃えている。
+ * 日曜始まりであり、これはカレンダーグリッドおよび statsService.getWeekRange と
+ * 揃えるための意図的な選択。ただしこのコードベースには週開始の定義が他に複数あり、
+ * それらはすべて月曜始まりで、名前だけでは規約の違いが分からない：
+ * - src/domain/services/streakService.ts の（モジュール非公開の）getWeekStart
+ * - src/hooks/streakOperations.ts の getWeekStartDate
+ * - api/send-reminders.ts の getWeekStartUtc（isWeeklyCountMet に渡される）
+ *
+ * Phase 3 で send-reminders.ts の getWeekStartUtc() をこの getWeekStartSunday(now, tz)
+ * に置き換える計画があるが、これは単純な差し替えではない。日曜始まりへの変更により
+ * weekly_count の集計ウィンドウが最大 1 日分ずれる、意図的な挙動変更になる。
  */
-export function getWeekStart(instant: Date, timeZone: string): string {
+export function getWeekStartSunday(instant: Date, timeZone: string): string {
   const date = getLocalDate(instant, timeZone);
   return addDays(date, -getLocalDayOfWeek(instant, timeZone));
 }
@@ -120,5 +132,3 @@ export function isValidTimeZone(timeZone: string): boolean {
 export function getBrowserTimeZone(): string {
   return Intl.DateTimeFormat().resolvedOptions().timeZone;
 }
-
-export { MINUTES_PER_HOUR };
