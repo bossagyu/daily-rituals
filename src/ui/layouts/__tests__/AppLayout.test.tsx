@@ -13,6 +13,7 @@ import { MemoryRouter } from 'react-router-dom';
 import '@testing-library/jest-dom/vitest';
 import { AppLayout } from '../AppLayout';
 import type { PushSubscriptionRepository } from '@/data/repositories/pushSubscriptionRepository';
+import type { ProfileRepository } from '@/data/repositories/profileRepository';
 
 // Mock useAuthContext to provide a test user
 vi.mock('@/hooks/useAuthContext', () => ({
@@ -29,17 +30,24 @@ vi.mock('@/hooks/useAuthContext', () => ({
   }),
 }));
 
-// Mock useRepositories - AppLayout reconciles the push subscription on
-// mount, which requires access to the pushSubscriptionRepository.
+// Mock useRepositories - AppLayout reconciles the push subscription and
+// syncs the timezone on mount, which requires access to
+// pushSubscriptionRepository and profileRepository.
 const mockPushSubscriptionRepository: PushSubscriptionRepository = {
   upsert: vi.fn().mockResolvedValue(undefined),
   findByEndpoint: vi.fn().mockResolvedValue(null),
   deleteByEndpoint: vi.fn().mockResolvedValue(undefined),
 };
 
+const mockProfileRepository: ProfileRepository = {
+  findMine: vi.fn().mockResolvedValue(null),
+  updateTimezone: vi.fn().mockResolvedValue(undefined),
+};
+
 vi.mock('@/hooks/useRepositories', () => ({
   useRepositories: () => ({
     pushSubscriptionRepository: mockPushSubscriptionRepository,
+    profileRepository: mockProfileRepository,
   }),
 }));
 
@@ -51,6 +59,14 @@ vi.mock('@/hooks/usePushSubscriptionReconcile', () => ({
   usePushSubscriptionReconcile: (
     repository: PushSubscriptionRepository | null,
   ) => mockReconcile(repository),
+}));
+
+// Mock useTimezoneSync so the wiring test below can assert AppLayout
+// actually invokes it on mount, without touching Intl/DB.
+const mockTimezoneSync = vi.fn();
+vi.mock('@/hooks/useTimezoneSync', () => ({
+  useTimezoneSync: (repository: ProfileRepository | null) =>
+    mockTimezoneSync(repository),
 }));
 
 function renderWithRouter(initialRoute = '/') {
@@ -134,6 +150,35 @@ describe('AppLayout push subscription reconciliation', () => {
 
     await waitFor(() => {
       expect(mockReconcile).toHaveBeenCalledWith(mockPushSubscriptionRepository);
+    });
+  });
+});
+
+describe('AppLayout timezone sync', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  // Regression test for the same class of bug as the push subscription
+  // reconciliation above: a hook wired into only specific pages silently
+  // never runs when the user lands elsewhere, and unit tests for the hook
+  // itself can't catch that because they don't check where it's called
+  // from. AppLayout wraps every authenticated route, so syncing here
+  // guarantees the browser's timezone reaches profiles once per session
+  // regardless of the landing page.
+  it('syncs the timezone on mount, regardless of route', async () => {
+    renderWithRouter('/');
+
+    await waitFor(() => {
+      expect(mockTimezoneSync).toHaveBeenCalledWith(mockProfileRepository);
+    });
+  });
+
+  it('syncs the timezone even when landing on a non-default route', async () => {
+    renderWithRouter('/calendar');
+
+    await waitFor(() => {
+      expect(mockTimezoneSync).toHaveBeenCalledWith(mockProfileRepository);
     });
   });
 });

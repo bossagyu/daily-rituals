@@ -19,16 +19,22 @@ import {
 import { useAuthContext } from '@/hooks/useAuthContext';
 import { useRepositories } from '@/hooks/useRepositories';
 import { usePushSubscriptionReconcile } from '@/hooks/usePushSubscriptionReconcile';
+import { useTimezoneSync } from '@/hooks/useTimezoneSync';
 
 export function AppLayout() {
   const { user } = useAuthContext();
-  const { pushSubscriptionRepository } = useRepositories();
+  const { pushSubscriptionRepository, profileRepository } = useRepositories();
 
   // Reconcile the push subscription once per authenticated session,
   // regardless of which route the user lands on first. AppLayout wraps
   // every protected route, so this recovers from iOS silently dropping the
   // subscription without requiring the user to visit a specific page.
   usePushSubscriptionReconcile(pushSubscriptionRepository);
+
+  // Sync the browser's timezone to profiles once per authenticated session.
+  // Reminders are judged in the user's local timezone, so travel or a move
+  // must be picked up automatically rather than requiring a manual fix.
+  useTimezoneSync(profileRepository);
 
   if (!user) {
     return null;
