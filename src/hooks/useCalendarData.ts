@@ -16,6 +16,7 @@ import {
   type CalendarDay,
   type DayAchievement,
 } from '@/domain/services/calendarService';
+import { getBrowserTimeZone } from '@/domain/services/timeService';
 
 // --- Types ---
 
@@ -173,7 +174,16 @@ export function useCalendarData(
 
     const habitsForCalc = filterHabitsForCalculation(allHabits, filter);
 
-    return calculateDailyAchievements(habitsForCalc, completions, startDate, endDate);
+    // TODO: profiles.timezone をこのフックまで伝播させる（Task 3.6 の対象外、
+    // useCalendarData の他の年/月ローカル日付計算と同じく別チケットで対応）。
+    // 現状はブラウザのタイムゾーンを使う従来の挙動のまま。
+    return calculateDailyAchievements(
+      habitsForCalc,
+      completions,
+      startDate,
+      endDate,
+      getBrowserTimeZone(),
+    );
   }, [isLoading, allHabits, completions, calendarGrid, filter]);
 
   const canGoNext = useMemo(() => canNavigateNext(year, month), [year, month]);

@@ -23,21 +23,28 @@ function makeHabit(overrides: Partial<Habit> = {}): Habit {
 
 describe('isActiveOnDate', () => {
   it('作成日当日は有効', () => {
-    expect(isActiveOnDate(makeHabit(), '2026-03-10')).toBe(true);
+    expect(isActiveOnDate(makeHabit(), '2026-03-10', 'Asia/Tokyo')).toBe(true);
   });
 
   it('作成日の前日は無効', () => {
-    expect(isActiveOnDate(makeHabit(), '2026-03-09')).toBe(false);
+    expect(isActiveOnDate(makeHabit(), '2026-03-09', 'Asia/Tokyo')).toBe(false);
   });
 
   it('アーカイブ日当日は有効', () => {
     const habit = makeHabit({ archivedAt: '2026-03-20T00:00:00.000Z' });
-    expect(isActiveOnDate(habit, '2026-03-20')).toBe(true);
+    expect(isActiveOnDate(habit, '2026-03-20', 'Asia/Tokyo')).toBe(true);
   });
 
   it('アーカイブ日の翌日は無効', () => {
     const habit = makeHabit({ archivedAt: '2026-03-20T00:00:00.000Z' });
-    expect(isActiveOnDate(habit, '2026-03-21')).toBe(false);
+    expect(isActiveOnDate(habit, '2026-03-21', 'Asia/Tokyo')).toBe(false);
+  });
+
+  it('負のUTCオフセットではUTC日付ではなくユーザーTZのローカル日付で判定する', () => {
+    // 2026-03-10T02:00:00Z は America/Los_Angeles ではまだ 2026-03-09 18:00（PST, UTC-8）。
+    // UTCスライスでは createdAt が '2026-03-10' になり作成当日が無効判定されてしまう。
+    const habit = makeHabit({ createdAt: '2026-03-10T02:00:00.000Z' });
+    expect(isActiveOnDate(habit, '2026-03-09', 'America/Los_Angeles')).toBe(true);
   });
 });
 

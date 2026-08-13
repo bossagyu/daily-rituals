@@ -22,6 +22,7 @@ import {
   getMonthRange,
   type AchievementSummary,
 } from '@/domain/services/statsService';
+import { getBrowserTimeZone } from '@/domain/services/timeService';
 import { getTodayString } from '@/lib/dateUtils';
 
 export type StatsData = {
@@ -105,7 +106,10 @@ export function useStatsData(
     const today = getTodayString();
     const earliest = getEarliestHabitDate(habits) ?? today;
 
-    const xp = calculateTotalXp(habits, completions, earliest, today);
+    // TODO: profiles.timezone をこのフックまで伝播させる（Task 3.6 の対象外、
+    // 別チケットで対応）。現状はブラウザのタイムゾーンを使う従来の挙動のまま。
+    const timeZone = getBrowserTimeZone();
+    const xp = calculateTotalXp(habits, completions, earliest, today, timeZone);
 
     const weekRange = getWeekRange(today);
     const monthRange = getMonthRange(today);
@@ -122,6 +126,7 @@ export function useStatsData(
       completions,
       aggregateStart,
       aggregateEnd,
+      timeZone,
     );
 
     const weekly = aggregateAchievements(

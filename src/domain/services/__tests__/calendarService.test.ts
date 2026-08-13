@@ -148,6 +148,7 @@ describe('calculateDailyAchievements', () => {
       completions,
       '2026-03-01',
       '2026-03-01',
+      'Asia/Tokyo',
     );
     expect(result[0].rate).toBe(1.0);
     expect(result[0].completedCount).toBe(1);
@@ -160,6 +161,7 @@ describe('calculateDailyAchievements', () => {
       [],
       '2026-03-01',
       '2026-03-01',
+      'Asia/Tokyo',
     );
     expect(result[0].rate).toBe(0);
     expect(result[0].targetCount).toBe(1);
@@ -172,6 +174,7 @@ describe('calculateDailyAchievements', () => {
       [],
       '2026-03-01',
       '2026-03-01',
+      'Asia/Tokyo',
     );
     expect(result[0].targetCount).toBe(0);
   });
@@ -183,6 +186,7 @@ describe('calculateDailyAchievements', () => {
       [],
       '2026-03-02',
       '2026-03-02',
+      'Asia/Tokyo',
     );
     expect(result[0].targetCount).toBe(1);
   });
@@ -193,6 +197,7 @@ describe('calculateDailyAchievements', () => {
       [],
       '2026-03-01',
       '2026-03-01',
+      'Asia/Tokyo',
     );
     expect(result[0].targetCount).toBe(0);
   });
@@ -212,6 +217,7 @@ describe('calculateDailyAchievements', () => {
       completions,
       '2026-03-01',
       '2026-03-01',
+      'Asia/Tokyo',
     );
     expect(result[0].completedCount).toBe(1);
   });
@@ -226,6 +232,7 @@ describe('calculateDailyAchievements', () => {
       [],
       '2026-03-01',
       '2026-03-01',
+      'Asia/Tokyo',
     );
     expect(result[0].targetCount).toBe(0);
   });
@@ -240,6 +247,7 @@ describe('calculateDailyAchievements', () => {
       [],
       '2026-03-06',
       '2026-03-06',
+      'Asia/Tokyo',
     );
     expect(result[0].targetCount).toBe(0);
   });
@@ -254,6 +262,7 @@ describe('calculateDailyAchievements', () => {
       [],
       '2026-03-04',
       '2026-03-04',
+      'Asia/Tokyo',
     );
     expect(result[0].targetCount).toBe(1);
   });
@@ -273,6 +282,7 @@ describe('calculateDailyAchievements', () => {
       completions,
       '2026-03-01',
       '2026-03-01',
+      'Asia/Tokyo',
     );
     expect(result[0].completedHabitNames).toEqual(['読書']);
   });
@@ -283,6 +293,7 @@ describe('calculateDailyAchievements', () => {
       [],
       '2026-03-01',
       '2026-03-03',
+      'Asia/Tokyo',
     );
     expect(result).toHaveLength(3);
   });

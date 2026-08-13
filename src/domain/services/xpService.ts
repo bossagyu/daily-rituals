@@ -119,6 +119,7 @@ export function calculateAllCompleteBonuses(
   completions: readonly Completion[],
   startDate: string,
   endDate: string,
+  timeZone: string,
 ): number {
   const completionsByDate = new Map<string, Set<string>>();
   for (const c of completions) {
@@ -134,7 +135,7 @@ export function calculateAllCompleteBonuses(
 
     // Find habits that are due on this date (daily + weekly_days only)
     const dueHabits = habits.filter(
-      (h) => isActiveOnDate(h, current) && isCountedAsTargetOnDate(h, current),
+      (h) => isActiveOnDate(h, current, timeZone) && isCountedAsTargetOnDate(h, current),
     );
 
     if (dueHabits.length > 0) {
@@ -155,6 +156,7 @@ export function calculateTotalXp(
   completions: readonly Completion[],
   startDate: string,
   endDate: string,
+  timeZone: string,
 ): XpBreakdown {
   const basicXp = completions.length;
 
@@ -166,7 +168,7 @@ export function calculateTotalXp(
   }
 
   const streakBonus = calculateStreakBonuses(completionsByHabitId, habits);
-  const allCompleteBonus = calculateAllCompleteBonuses(habits, completions, startDate, endDate);
+  const allCompleteBonus = calculateAllCompleteBonuses(habits, completions, startDate, endDate, timeZone);
 
   const totalXp = basicXp + streakBonus + allCompleteBonus;
   const levelInfo = calculateLevel(totalXp);
