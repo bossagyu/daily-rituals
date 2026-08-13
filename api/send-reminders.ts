@@ -401,7 +401,11 @@ export default async function handler(
     localTodayByHabit,
   );
 
-  // 3. weekly_count 習慣の今週の完了数を、所有者の週開始日（日曜）基準で取得する
+  // 3. weekly_count 習慣の今週の完了数を、所有者の週開始日（月曜）基準で取得する。
+  //    月曜始まりなのは buildUserContext / getWeekStartMonday と同じ理由：
+  //    TodayHabitCard の「今週 {done}/{target}」表示と揃えるため。日曜始まりに
+  //    戻すと表示とズレて土日に通知の有無が食い違う regression を再発させる
+  //    （詳細は timeService.getWeekStartMonday のコメント参照）。
   const weeklyCountHabits = typedHabits.filter(
     (h) => h.frequency_type === 'weekly_count',
   );

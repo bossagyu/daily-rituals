@@ -324,7 +324,9 @@ describe('countWeeklyCompletions', () => {
   });
 
   it('週開始日より前の completion はカウントしない', () => {
-    const weekStartByHabit = new Map([['h1', '2026-03-08']]);
+    // 2026-03-09 は月曜（週開始の規約と一致させている。日曜の 2026-03-08 だと
+    // getWeekStartMonday が実際に返す値と矛盾するフィクスチャになる）。
+    const weekStartByHabit = new Map([['h1', '2026-03-09']]);
     const localTodayByHabit = new Map([['h1', '2026-03-12']]);
     const completions: CompletionRow[] = [
       { habit_id: 'h1', completed_date: '2026-03-07' },

@@ -35,6 +35,16 @@ import { test, expect } from '../fixtures/base';
  * would fail to match and the handler would (wrongly) still consider the
  * habit due, so the `message` assertion below would fail.
  *
+ * A second, weekly_count habit is also seeded (with its own completion for
+ * today) so that `weeklyCountHabits.length > 0` is true and the handler's
+ * *second* completions query — `.gte('completed_date', ...).lte(...)` for
+ * weekly progress — actually executes. Without this, that query shape would
+ * be the one path in the handler still unvalidated against the real schema,
+ * which is exactly the class of defect that already bit this branch once
+ * (an unresolvable `profiles!inner(timezone)` embed typechecked, passed unit
+ * and E2E tests, and returned HTTP 500 on every cron run until a human
+ * caught it by querying the database by hand).
+ *
  * The test user's profile is temporarily switched to a timezone picked by
  * `pickDivergentTimeZone` (see its docstring) so that the owner-local date
  * and the UTC date are *guaranteed* to differ, regardless of what time of
@@ -111,6 +121,16 @@ test.describe('send-reminders handler smoke test', () => {
       reminderTime: '00:00:00',
     });
 
+    // weekly_count habit so the handler's weekly-completions query
+    // (`.gte('completed_date', ...).lte(...)`) actually executes. See the
+    // suite-level docstring above.
+    const { id: weeklyHabitId } = await seedHabit({
+      name: 'E2Eスモークテスト習慣（週次）',
+      frequencyType: 'weekly_count',
+      frequencyValue: { count: 1 },
+      reminderTime: '00:00:00',
+    });
+
     // Force a timezone where owner-local date != UTC date right now (see
     // pickDivergentTimeZone doc), then restore the profile's original
     // timezone afterwards. Nothing else in this test suite reads
@@ -150,6 +170,10 @@ test.describe('send-reminders handler smoke test', () => {
       // is what makes this test fail if localTodayByHabit reverts to UTC.
       const ownerLocalToday = getLocalDate(new Date(), divergentTimeZone);
       await seedCompletion(habitId, ownerLocalToday);
+      // Same owner-local today, so the weekly habit's required count (1) is
+      // already met and it stays out of the notifiable set — the
+      // 'All habits completed' expectation below still holds.
+      await seedCompletion(weeklyHabitId, ownerLocalToday);
 
       const req = {
         method: 'POST',

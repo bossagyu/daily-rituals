@@ -70,4 +70,26 @@ describe('useUserTimeZone', () => {
     });
     expect(getBrowserTimeZone()).toBeTruthy();
   });
+
+  it('falls back to the browser timezone when profile.timezone is not a valid IANA name', async () => {
+    // profiles.timezone is unconstrained TEXT, so an invalid value can reach
+    // here. Without validation this would flow into isActiveOnDate ->
+    // getLocalDate -> new Intl.DateTimeFormat(...) and throw a RangeError
+    // during TodayPage's render-phase useMemo, white-screening the page
+    // (there is no ErrorBoundary in src/).
+    const repository = makeRepository({
+      findMine: vi.fn().mockResolvedValue({
+        id: 'u1',
+        displayName: null,
+        timezone: 'Not/AValidZone',
+      }),
+    });
+
+    const { result } = renderHook(() => useUserTimeZone(repository));
+
+    await waitFor(() => {
+      expect(repository.findMine).toHaveBeenCalledOnce();
+    });
+    expect(result.current).toBe(getBrowserTimeZone());
+  });
 });
