@@ -120,7 +120,6 @@ test.describe('send-reminders handler smoke test', () => {
     // one in the same worker.
     const originalTimezone = await getProfileTimezone(testUserId);
     const divergentTimeZone = pickDivergentTimeZone(new Date());
-    await setProfileTimezone(testUserId, divergentTimeZone);
 
     const cronSecret = 'e2e-smoke-test-cron-secret';
     // Dummy but well-formed VAPID keypair. The seeded user has no
@@ -141,6 +140,11 @@ test.describe('send-reminders handler smoke test', () => {
     process.env.CRON_SECRET = cronSecret;
 
     try {
+      // Applied inside the try so the finally below always restores it, even
+      // if setup between here and the assertions throws. Outside the try, a
+      // throw would leak this timezone into every later test in this worker.
+      await setProfileTimezone(testUserId, divergentTimeZone);
+
       // Owner-local "today" under the divergent timezone. Seeding the
       // completion under this date, rather than the runner's own UTC date,
       // is what makes this test fail if localTodayByHabit reverts to UTC.
