@@ -65,6 +65,11 @@ jobs:
           echo "== grants on public.habits AFTER =="
           psql "$DB_URL" -Atc "select grantee||':'||privilege_type from information_schema.role_table_grants where table_schema='public' and table_name='habits' order by 1;" || true
 
+      - name: Verify reminder_time conversion expression
+        run: |
+          eval "$(supabase status -o env)"
+          psql "$DB_URL" -v ON_ERROR_STOP=1 -f supabase/snippets/verify-timezone-conversion.sql
+
       - name: Run E2E tests
         run: npm run test:e2e
 
