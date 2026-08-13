@@ -1,8 +1,9 @@
 /**
  * Vercel API Route: send-reminders
  *
- * Queries habits with reminder_time that match the current UTC time slot,
- * checks whether they are already completed today, and sends push
+ * Queries habits with a reminder_time set, and for each one judges the
+ * current time slot, completion status, and notification history in the
+ * habit owner's own timezone (profiles.timezone), then sends push
  * notifications for incomplete habits.
  *
  * Invoked periodically via pg_cron with x-cron-secret header.
@@ -53,6 +54,11 @@ type SubscriptionRow = {
   readonly auth: string;
 };
 
+export type CompletionRow = {
+  readonly habit_id: string;
+  readonly completed_date: string;
+};
+
 // --- Pure helper functions ---
 
 /**
@@ -95,6 +101,42 @@ export function selectHabitsToNotify(
 
     return true;
   });
+}
+
+/**
+ * completion のうち、その habit の所有者にとっての「ローカル今日」と一致するものだけを
+ * 完了済みとして拾う。ユーザーごとにローカル今日が異なるため、単一の "today" ではなく
+ * habit ごとの日付で照合する。
+ */
+export function selectCompletedHabitIds(
+  completions: readonly CompletionRow[],
+  localTodayByHabit: ReadonlyMap<string, string>,
+): ReadonlySet<string> {
+  return new Set(
+    completions
+      .filter((c) => c.completed_date === localTodayByHabit.get(c.habit_id))
+      .map((c) => c.habit_id),
+  );
+}
+
+/**
+ * weekly_count 習慣ごとに、所有者のローカル週開始日〜ローカル今日の範囲内にある
+ * completion 件数を数える。
+ */
+export function countWeeklyCompletions(
+  completions: readonly CompletionRow[],
+  weekStartByHabit: ReadonlyMap<string, string>,
+  localTodayByHabit: ReadonlyMap<string, string>,
+): ReadonlyMap<string, number> {
+  const counts = new Map<string, number>();
+  for (const c of completions) {
+    const weekStart = weekStartByHabit.get(c.habit_id);
+    const localToday = localTodayByHabit.get(c.habit_id);
+    if (weekStart === undefined || localToday === undefined) continue;
+    if (c.completed_date < weekStart || c.completed_date > localToday) continue;
+    counts.set(c.habit_id, (counts.get(c.habit_id) ?? 0) + 1);
+  }
+  return counts;
 }
 
 export function buildNotificationBody(habitNames: readonly string[]): string {
@@ -280,11 +322,11 @@ export default async function handler(
 
   const now = new Date();
 
-  // 1. リマインダー設定のある有効な習慣を、所有者のタイムゾーンつきで取得する
+  // 1. リマインダー設定のある有効な習慣を取得する
   const { data: habits, error: habitsError } = await supabase
     .from('habits')
     .select(
-      'id, user_id, name, frequency_type, frequency_value, reminder_time, last_notified_date, profiles!inner(timezone)',
+      'id, user_id, name, frequency_type, frequency_value, reminder_time, last_notified_date',
     )
     .not('reminder_time', 'is', null)
     .is('archived_at', null);
@@ -294,7 +336,32 @@ export default async function handler(
     return;
   }
 
-  const typedHabits: HabitRow[] = (habits ?? []).map((row) => ({
+  if (!habits || habits.length === 0) {
+    res.status(200).json({ sent: 0, message: 'No habits with reminders' });
+    return;
+  }
+
+  // habits と profiles の間に外部キーはないため、埋め込み select
+  // （profiles!inner(...)）は PostgREST で解決できない。
+  // 個別に取得し、JS 側で user_id をキーに結合する。
+  const { data: profiles, error: profilesError } = await supabase
+    .from('profiles')
+    .select('id, timezone')
+    .in('id', [...new Set(habits.map((h) => h.user_id))]);
+
+  if (profilesError) {
+    res.status(500).json({ error: profilesError.message });
+    return;
+  }
+
+  const timeZoneByUser = new Map(
+    (profiles ?? []).map((p: { id: string; timezone: string | null }) => [
+      p.id,
+      p.timezone ?? DEFAULT_TIME_ZONE,
+    ]),
+  );
+
+  const typedHabits: HabitRow[] = habits.map((row) => ({
     id: row.id,
     user_id: row.user_id,
     name: row.name,
@@ -302,14 +369,8 @@ export default async function handler(
     frequency_value: row.frequency_value,
     reminder_time: row.reminder_time,
     last_notified_date: row.last_notified_date,
-    timezone:
-      (row.profiles as { timezone?: string } | null)?.timezone ?? DEFAULT_TIME_ZONE,
+    timezone: timeZoneByUser.get(row.user_id) ?? DEFAULT_TIME_ZONE,
   }));
-
-  if (typedHabits.length === 0) {
-    res.status(200).json({ sent: 0, message: 'No habits with reminders' });
-    return;
-  }
 
   // 2. 各習慣の所有者にとっての「今日」の完了記録を取得する
   const localTodayByHabit = new Map(
@@ -331,27 +392,29 @@ export default async function handler(
     return;
   }
 
-  const completedHabitIds = new Set(
-    (completions ?? [])
-      .filter(
-        (c: { habit_id: string; completed_date: string }) =>
-          c.completed_date === localTodayByHabit.get(c.habit_id),
-      )
-      .map((c: { habit_id: string }) => c.habit_id),
+  const completedHabitIds = selectCompletedHabitIds(
+    (completions ?? []) as CompletionRow[],
+    localTodayByHabit,
   );
 
   // 3. weekly_count 習慣の今週の完了数を、所有者の週開始日（日曜）基準で取得する
   const weeklyCountHabits = typedHabits.filter(
     (h) => h.frequency_type === 'weekly_count',
   );
-  const weeklyCompletionCounts = new Map<string, number>();
+  let weeklyCompletionCounts: ReadonlyMap<string, number> = new Map();
 
   if (weeklyCountHabits.length > 0) {
     const weekStartByHabit = new Map(
       weeklyCountHabits.map((h) => [h.id, buildUserContext(now, h.timezone).weekStart]),
     );
+    const localTodayForWeekly = weeklyCountHabits.map(
+      (h) => localTodayByHabit.get(h.id) as string,
+    );
     const earliestWeekStart = [...weekStartByHabit.values()].reduce((min, d) =>
       d < min ? d : min,
+    );
+    const latestLocalToday = localTodayForWeekly.reduce((max, d) =>
+      d > max ? d : max,
     );
 
     const { data: weeklyCompletions, error: weeklyError } = await supabase
@@ -361,26 +424,19 @@ export default async function handler(
         'habit_id',
         weeklyCountHabits.map((h) => h.id),
       )
-      .gte('completed_date', earliestWeekStart);
+      .gte('completed_date', earliestWeekStart)
+      .lte('completed_date', latestLocalToday);
 
     if (weeklyError) {
       res.status(500).json({ error: weeklyError.message });
       return;
     }
 
-    for (const c of (weeklyCompletions ?? []) as {
-      habit_id: string;
-      completed_date: string;
-    }[]) {
-      const weekStart = weekStartByHabit.get(c.habit_id);
-      const localToday = localTodayByHabit.get(c.habit_id);
-      if (weekStart === undefined || localToday === undefined) continue;
-      if (c.completed_date < weekStart || c.completed_date > localToday) continue;
-      weeklyCompletionCounts.set(
-        c.habit_id,
-        (weeklyCompletionCounts.get(c.habit_id) ?? 0) + 1,
-      );
-    }
+    weeklyCompletionCounts = countWeeklyCompletions(
+      (weeklyCompletions ?? []) as CompletionRow[],
+      weekStartByHabit,
+      localTodayByHabit,
+    );
   }
 
   // 4. 通知すべき習慣を選ぶ（所有者のタイムゾーン基準）
@@ -412,9 +468,13 @@ export default async function handler(
 
   // 7. 通知した習慣の last_notified_date を、所有者のローカル今日で更新する
   for (const habitId of results.notifiedHabitIds) {
+    const localToday = localTodayByHabit.get(habitId);
+    if (!localToday) {
+      continue;
+    }
     await supabase
       .from('habits')
-      .update({ last_notified_date: localTodayByHabit.get(habitId) })
+      .update({ last_notified_date: localToday })
       .eq('id', habitId);
   }
 

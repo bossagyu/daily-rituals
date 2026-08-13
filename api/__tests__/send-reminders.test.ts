@@ -5,7 +5,10 @@ import {
   isScheduledToday,
   buildUserContext,
   selectHabitsToNotify,
+  selectCompletedHabitIds,
+  countWeeklyCompletions,
   type HabitRow,
+  type CompletionRow,
 } from '../send-reminders';
 
 const baseHabit: HabitRow = {
@@ -226,6 +229,26 @@ describe('selectHabitsToNotify', () => {
     expect(selectHabitsToNotify([habit], instant, new Set(), new Map())).toEqual([]);
   });
 
+  it('weekly_days はローカル曜日（東京の木曜=4）が対象なら選ぶ', () => {
+    // instant は UTC では 03-11 水曜（3）、東京では 03-12 木曜（4）。
+    // ローカル評価でのみ選ばれる。UTC 曜日に戻す退行があるとここで落ちる。
+    const habit = makeHabitRow({
+      frequency_type: 'weekly_days',
+      frequency_value: { days: [4] },
+    });
+    expect(selectHabitsToNotify([habit], instant, new Set(), new Map()).map((h) => h.id))
+      .toEqual(['h1']);
+  });
+
+  it('weekly_days は UTC 曜日（水曜=3）が対象でもローカルでなければ選ばない', () => {
+    // UTC 基準の実装ならここで誤って選んでしまう。ローカル基準なら選ばれない。
+    const habit = makeHabitRow({
+      frequency_type: 'weekly_days',
+      frequency_value: { days: [3] },
+    });
+    expect(selectHabitsToNotify([habit], instant, new Set(), new Map())).toEqual([]);
+  });
+
   it('weekly_count は今週の目標を満たしていれば選ばない', () => {
     const habit = makeHabitRow({
       frequency_type: 'weekly_count',
@@ -243,5 +266,72 @@ describe('selectHabitsToNotify', () => {
     const weeklyCounts = new Map([['h1', 2]]);
     expect(selectHabitsToNotify([habit], instant, new Set(), weeklyCounts).map((h) => h.id))
       .toEqual(['h1']);
+  });
+});
+
+describe('selectCompletedHabitIds', () => {
+  it('habit ごとの所有者ローカル今日と一致する completion のみ完了とみなす', () => {
+    // hA は東京（ローカル今日 03-12）、hB はロサンゼルス（ローカル今日 03-11）を想定。
+    // hB の completion に "03-12"（hA のローカル今日と同じ日付）が紛れ込んでいても、
+    // hB 自身のローカル今日と一致しない限り完了扱いにしてはいけない。
+    const localTodayByHabit = new Map([
+      ['hA', '2026-03-12'],
+      ['hB', '2026-03-11'],
+    ]);
+    const completions: CompletionRow[] = [
+      { habit_id: 'hA', completed_date: '2026-03-12' },
+      { habit_id: 'hB', completed_date: '2026-03-12' },
+    ];
+
+    const result = selectCompletedHabitIds(completions, localTodayByHabit);
+
+    expect(result.has('hA')).toBe(true);
+    expect(result.has('hB')).toBe(false);
+  });
+
+  it('対応する localToday が無い habit_id の completion は無視する', () => {
+    const result = selectCompletedHabitIds(
+      [{ habit_id: 'unknown', completed_date: '2026-03-12' }],
+      new Map(),
+    );
+    expect(result.size).toBe(0);
+  });
+});
+
+describe('countWeeklyCompletions', () => {
+  it('habit ごとの週開始日〜ローカル今日の範囲内の completion のみカウントする', () => {
+    // hA・hB は同じ週開始日だが、hB のローカル今日は hA より1日早い（別タイムゾーン）。
+    // hB 宛ての completion のうち hB のローカル今日より後の日付は、hA のローカル今日と
+    // 一致していても hB のカウントに含めてはいけない。
+    const weekStartByHabit = new Map([
+      ['hA', '2026-03-08'],
+      ['hB', '2026-03-08'],
+    ]);
+    const localTodayByHabit = new Map([
+      ['hA', '2026-03-12'],
+      ['hB', '2026-03-11'],
+    ]);
+    const completions: CompletionRow[] = [
+      { habit_id: 'hA', completed_date: '2026-03-12' }, // hA の範囲内
+      { habit_id: 'hB', completed_date: '2026-03-12' }, // hB のローカル今日より後 → 範囲外
+      { habit_id: 'hB', completed_date: '2026-03-09' }, // hB の範囲内
+    ];
+
+    const result = countWeeklyCompletions(completions, weekStartByHabit, localTodayByHabit);
+
+    expect(result.get('hA')).toBe(1);
+    expect(result.get('hB')).toBe(1);
+  });
+
+  it('週開始日より前の completion はカウントしない', () => {
+    const weekStartByHabit = new Map([['h1', '2026-03-08']]);
+    const localTodayByHabit = new Map([['h1', '2026-03-12']]);
+    const completions: CompletionRow[] = [
+      { habit_id: 'h1', completed_date: '2026-03-07' },
+    ];
+
+    const result = countWeeklyCompletions(completions, weekStartByHabit, localTodayByHabit);
+
+    expect(result.has('h1')).toBe(false);
   });
 });
