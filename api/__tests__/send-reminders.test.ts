@@ -171,7 +171,7 @@ describe('buildUserContext', () => {
     expect(ctx.today).toBe('2026-03-12');
     expect(ctx.slot).toBe('07:00');
     expect(ctx.dayOfWeek).toBe(4); // 木曜
-    expect(ctx.weekStart).toBe('2026-03-08');
+    expect(ctx.weekStart).toBe('2026-03-09'); // 月曜始まり（2026-03-12 木曜の週の月曜）
   });
 
   it('10 分スロットに切り捨てる', () => {

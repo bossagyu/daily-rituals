@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import webpush from 'web-push';
 import handler from '../../api/send-reminders';
+import { getLocalDate } from '../../src/domain/services/timeService';
 import {
   SUPABASE_LOCAL_URL,
   SUPABASE_LOCAL_SERVICE_ROLE_KEY,
@@ -25,6 +26,14 @@ import { test, expect } from '../fixtures/base';
  * habits the handler short-circuits before ever touching profiles or
  * completions, which would make this test blind to exactly the bug class
  * it exists to catch.
+ *
+ * A completion is also seeded, dated to the habit owner's *local* today
+ * (the test user's profile defaults to Asia/Tokyo — see
+ * on_auth_user_created). This exercises `localTodayByHabit`, which is built
+ * inside `handler` itself and therefore invisible to the pure-function unit
+ * tests: if it were ever computed from a UTC date instead of the owner's
+ * timezone, the completion would fail to match and the handler would (wrongly)
+ * still consider the habit due, so the `message` assertion below would fail.
  */
 
 type CapturedResponse = {
@@ -60,13 +69,22 @@ const HANDLER_ENV_KEYS = [
 test.describe('send-reminders handler smoke test', () => {
   test('runs the real handler against local Supabase without a query/schema error', async ({
     seedHabit,
+    seedCompletion,
   }) => {
     // reminder_time '00:00:00' is always <= the current time slot, so the
-    // habit is due regardless of when this test happens to run.
-    await seedHabit({
+    // habit is due (were it not already completed) regardless of when this
+    // test happens to run.
+    const { id: habitId } = await seedHabit({
       name: 'E2Eスモークテスト習慣',
       reminderTime: '00:00:00',
     });
+
+    // Owner-local "today" (test user's profile timezone defaults to
+    // Asia/Tokyo). Seeding the completion under this date, rather than the
+    // runner's own UTC date, is what makes this test fail if
+    // localTodayByHabit reverts to UTC.
+    const ownerLocalToday = getLocalDate(new Date(), 'Asia/Tokyo');
+    await seedCompletion(habitId, ownerLocalToday);
 
     const cronSecret = 'e2e-smoke-test-cron-secret';
     // Dummy but well-formed VAPID keypair. The seeded user has no
@@ -101,6 +119,12 @@ test.describe('send-reminders handler smoke test', () => {
       // body instead of reaching this point.
       expect(captured.body).not.toHaveProperty('error');
       expect(captured.statusCode).toBe(200);
+      // The only habit is already completed for the owner's local today, so
+      // the handler must recognize that and send nothing.
+      expect(captured.body).toMatchObject({
+        sent: 0,
+        message: 'All habits completed',
+      });
     } finally {
       for (const key of HANDLER_ENV_KEYS) {
         const original = originalEnv.get(key);

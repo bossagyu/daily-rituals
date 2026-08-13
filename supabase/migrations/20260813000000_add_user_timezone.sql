@@ -4,6 +4,35 @@
 
 ALTER TABLE profiles ADD COLUMN timezone TEXT NOT NULL DEFAULT 'Asia/Tokyo';
 
+-- このマイグレーション実行時点では、上の ALTER TABLE 直後であるため
+-- 既存の profiles.timezone は例外なくデフォルト値 'Asia/Tokyo' である。
+-- つまり以下の UPDATE は、すべての既存 habits をあたかも所有者が JST に
+-- いるかのように変換する。このアプリでは正しいが、将来ユーザーが複数の
+-- タイムゾーンを選べるようになった後に同種のマイグレーションを書く際は
+-- この前提（全員 JST）を流用しないこと。
+--
+-- 変換前に、reminder_time を持つ habits の所有者に profiles 行が
+-- 必ず存在することを確認する。on_auth_user_created トリガーにより
+-- 本来ありえないはずだが、万一欠けていると当該行は UTC のまま残り、
+-- アプリ側はそれをローカル時刻として読むため 9 時間ずれた reminder_time に
+-- なる。しかも変換済みか未変換かを事後に見分ける手段がない。だからこそ
+-- ここで確認し、半端に変換して進むのではなくマイグレーション自体を止める。
+DO $$
+DECLARE
+  orphan_count integer;
+BEGIN
+  SELECT count(*) INTO orphan_count
+  FROM habits h
+  WHERE h.reminder_time IS NOT NULL
+    AND NOT EXISTS (SELECT 1 FROM profiles p WHERE p.id = h.user_id);
+
+  IF orphan_count > 0 THEN
+    RAISE EXCEPTION
+      'Migration aborted: % habits with reminder_time have no matching profiles row (owner missing profile). Investigate before converting reminder_time to local time.',
+      orphan_count;
+  END IF;
+END $$;
+
 -- 既存の reminder_time は UTC で保存されている。これをユーザーの
 -- ローカル時刻へ戻す。以降 reminder_time は「ユーザーが画面で見ている時刻」を意味する。
 --

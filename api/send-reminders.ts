@@ -16,7 +16,7 @@ import {
   getLocalDate,
   getLocalTime,
   getLocalDayOfWeek,
-  getWeekStartSunday,
+  getWeekStartMonday,
   floorToSlot,
   isValidTimeZone,
 } from '../src/domain/services/timeService';
@@ -62,7 +62,11 @@ export type CompletionRow = {
 // --- Pure helper functions ---
 
 /**
- * ユーザーのタイムゾーンにおける、現在の日付・時刻スロット・曜日・週開始日を求める。
+ * ユーザーのタイムゾーンにおける、現在の日付・時刻スロット・曜日・週開始日（月曜）を求める。
+ *
+ * weekStart は月曜始まり。src/hooks/streakOperations.ts / streakService.ts の週次進捗
+ * 計算と揃えており、これは TodayHabitCard の「今週 {done}/{target}」表示（この通知が
+ * 指す当のカード）と一致させるため。詳細は timeService.getWeekStartMonday のコメント参照。
  */
 export function buildUserContext(instant: Date, timeZone: string): UserContext {
   const zone = isValidTimeZone(timeZone) ? timeZone : DEFAULT_TIME_ZONE;
@@ -71,7 +75,7 @@ export function buildUserContext(instant: Date, timeZone: string): UserContext {
     today: getLocalDate(instant, zone),
     slot: floorToSlot(getLocalTime(instant, zone), NOTIFICATION_WINDOW_MINUTES),
     dayOfWeek: getLocalDayOfWeek(instant, zone),
-    weekStart: getWeekStartSunday(instant, zone),
+    weekStart: getWeekStartMonday(instant, zone),
   };
 }
 
