@@ -12,7 +12,6 @@ import { useAuthContext } from '@/hooks/useAuthContext';
 import { useRepositories } from '@/hooks/useRepositories';
 import { usePushSubscription } from '@/hooks/usePushSubscription';
 import { toCreateHabitInput } from '@/domain/models/habitFormValidation';
-import { localTimeToUtc, getBrowserTimezoneOffset } from '@/lib/reminderTime';
 import type { HabitFormState } from '@/domain/models/habitFormValidation';
 
 export function NewHabitPage() {
@@ -34,15 +33,12 @@ export function NewHabitPage() {
       setSubmitError(null);
       try {
         const input = toCreateHabitInput(formState, user.id);
-        const reminderTimeUtc = formState.reminderEnabled
-          ? localTimeToUtc(formState.reminderTime, getBrowserTimezoneOffset())
-          : null;
 
         if (formState.reminderEnabled) {
           await ensureSubscription();
         }
 
-        await createHabit({ ...input, reminderTime: reminderTimeUtc });
+        await createHabit(input);
         navigate('/habits');
       } catch (error: unknown) {
         const message =

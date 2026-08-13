@@ -3,9 +3,7 @@
  *
  * このアプリにおける「今日」「今の時刻」の定義をここに集約していくのが目標状態。
  * ただし現時点ではまだ以下がこのモジュールの外にあり、集約は完了していない：
- * - api/send-reminders.ts の getTodayUtc()（Phase 3 で吸収予定）
  * - src/hooks/useCalendarData.ts の年/月ベースのローカル日付取得（別形状のため未着手・移行時期未定）
- * - src/lib/reminderTime.ts の getBrowserTimezoneOffset()（Phase 3 で吸収予定）
  *
  * クライアント（src/）と Vercel API Route（api/）の双方がこのファイルを参照する。
  *
@@ -94,22 +92,27 @@ export function getLocalDayOfWeek(instant: Date, timeZone: string): number {
 }
 
 /**
- * 指定タイムゾーンにおける、その瞬間が属する週の開始日（日曜）を返す。
+ * 指定タイムゾーンにおける、その瞬間が属する週の開始日（月曜）を返す。
  *
- * 日曜始まりであり、これはカレンダーグリッドおよび statsService.getWeekRange と
- * 揃えるための意図的な選択。ただしこのコードベースには週開始の定義が他に複数あり、
- * それらはすべて月曜始まりで、名前だけでは規約の違いが分からない：
+ * 月曜始まりであり、これは以下と揃えるための意図的な選択：
  * - src/domain/services/streakService.ts の（モジュール非公開の）getWeekStart
  * - src/hooks/streakOperations.ts の getWeekStartDate
- * - api/send-reminders.ts の getWeekStartUtc（isWeeklyCountMet に渡される）
  *
- * Phase 3 で send-reminders.ts の getWeekStartUtc() をこの getWeekStartSunday(now, tz)
- * に置き換える計画があるが、これは単純な差し替えではない。日曜始まりへの変更により
- * weekly_count の集計ウィンドウが最大 1 日分ずれる、意図的な挙動変更になる。
+ * この2つは weekly_count 習慣の週次進捗を計算し、TodayHabitCard の「今週 {done}/{target}」
+ * 表示（リマインダー通知が指す当のカードそのもの）を駆動する。api/send-reminders.ts の
+ * cron は通知要否の判定にこの関数を使っており、月曜始まりでなければ画面の表示と週の
+ * 境界がずれ、日曜・土曜に食い違った通知/非通知を出してしまう。
+ *
+ * 一方 statsService.getWeekRange はカレンダーグリッドに合わせて日曜始まりのままであり、
+ * これは意図的に異なる規約。カレンダーは通知を発生させないため、揃える必要がない。
+ * 週開始の定義を追加・変更する際は、対象が「週次進捗表示」系か「カレンダー」系かで
+ * 月曜/日曜どちらの規約に揃えるべきか区別すること。
  */
-export function getWeekStartSunday(instant: Date, timeZone: string): string {
+export function getWeekStartMonday(instant: Date, timeZone: string): string {
   const date = getLocalDate(instant, timeZone);
-  return addDays(date, -getLocalDayOfWeek(instant, timeZone));
+  const dayOfWeek = getLocalDayOfWeek(instant, timeZone); // 0=日曜 ... 6=土曜
+  const offsetToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+  return addDays(date, offsetToMonday);
 }
 
 /**

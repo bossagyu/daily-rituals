@@ -1699,11 +1699,11 @@ Expected: PASS
 ```ts
   const now = new Date();
 
-  // 1. リマインダー設定のある有効な習慣を、所有者のタイムゾーンつきで取得する
+  // 1. リマインダー設定のある有効な習慣を取得する
   const { data: habits, error: habitsError } = await supabase
     .from('habits')
     .select(
-      'id, user_id, name, frequency_type, frequency_value, reminder_time, last_notified_date, profiles!inner(timezone)',
+      'id, user_id, name, frequency_type, frequency_value, reminder_time, last_notified_date',
     )
     .not('reminder_time', 'is', null)
     .is('archived_at', null);
@@ -1713,6 +1713,24 @@ Expected: PASS
     return;
   }
 
+  // 2. 所有者のタイムゾーンを別クエリで引き、JS 側で結合する
+  const { data: profiles, error: profilesError } = await supabase
+    .from('profiles')
+    .select('id, timezone')
+    .in('id', [...new Set((habits ?? []).map((h) => h.user_id))]);
+
+  if (profilesError) {
+    res.status(500).json({ error: profilesError.message });
+    return;
+  }
+
+  const tzByUser = new Map(
+    (profiles ?? []).map((p: { id: string; timezone: string | null }) => [
+      p.id,
+      p.timezone ?? DEFAULT_TIME_ZONE,
+    ]),
+  );
+
   const typedHabits: HabitRow[] = (habits ?? []).map((row) => ({
     id: row.id,
     user_id: row.user_id,
@@ -1721,8 +1739,7 @@ Expected: PASS
     frequency_value: row.frequency_value,
     reminder_time: row.reminder_time,
     last_notified_date: row.last_notified_date,
-    timezone:
-      (row.profiles as { timezone?: string } | null)?.timezone ?? DEFAULT_TIME_ZONE,
+    timezone: tzByUser.get(row.user_id) ?? DEFAULT_TIME_ZONE,
   }));
 
   if (typedHabits.length === 0) {

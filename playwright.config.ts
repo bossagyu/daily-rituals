@@ -29,6 +29,10 @@ export default defineConfig({
     baseURL: 'http://localhost:5173',
     storageState: 'e2e/.auth/storage-state.json',
     trace: 'on-first-retry',
+    // GitHub-hosted runners default to UTC. Pin a non-UTC zone so
+    // UTC-vs-local-time bugs (e.g. reminder_time display) fail in CI
+    // instead of accidentally passing because local == UTC there.
+    timezoneId: 'Asia/Tokyo',
   },
   projects: [
     {

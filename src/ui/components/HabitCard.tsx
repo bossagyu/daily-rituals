@@ -7,7 +7,6 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import type { Habit } from '@/domain/models/habit';
 import { formatFrequency } from '@/domain/services/frequencyDisplayService';
-import { utcToLocalTime, getBrowserTimezoneOffset } from '@/lib/reminderTime';
 
 type HabitCardProps = {
   readonly habit: Habit;
@@ -37,7 +36,7 @@ export function HabitCard({ habit, onRestore, isArchived }: HabitCardProps) {
           {formatFrequency(habit.frequency)}
           {habit.reminderTime && (
             <span className="ml-1.5">
-              通知 {utcToLocalTime(habit.reminderTime.substring(0, 5), getBrowserTimezoneOffset())}
+              通知 {habit.reminderTime.substring(0, 5)}
             </span>
           )}
         </span>

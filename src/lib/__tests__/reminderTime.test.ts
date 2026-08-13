@@ -1,26 +1,7 @@
 import {
-  localTimeToUtc,
-  utcToLocalTime,
   roundToTenMinutes,
   generateTimeOptions,
-  getBrowserTimezoneOffset,
 } from '../reminderTime';
-
-describe('localTimeToUtc', () => {
-  it('converts JST 18:00 to UTC 09:00', () => {
-    expect(localTimeToUtc('18:00', 540)).toBe('09:00');
-  });
-
-  it('handles day boundary crossing (JST 02:00 → UTC 17:00 previous day)', () => {
-    expect(localTimeToUtc('02:00', 540)).toBe('17:00');
-  });
-});
-
-describe('utcToLocalTime', () => {
-  it('converts UTC 09:00 to JST 18:00', () => {
-    expect(utcToLocalTime('09:00', 540)).toBe('18:00');
-  });
-});
 
 describe('roundToTenMinutes', () => {
   it('rounds 09:03 down to 09:00', () => {
@@ -50,11 +31,5 @@ describe('generateTimeOptions', () => {
       const minutes = parseInt(opt.split(':')[1], 10);
       expect(minutes % 10).toBe(0);
     }
-  });
-});
-
-describe('getBrowserTimezoneOffset', () => {
-  it('returns a number', () => {
-    expect(typeof getBrowserTimezoneOffset()).toBe('number');
   });
 });

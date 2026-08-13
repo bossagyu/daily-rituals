@@ -102,6 +102,7 @@ export function calculateDailyAchievements(
   completions: readonly Completion[],
   startDate: string,
   endDate: string,
+  timeZone: string,
 ): readonly DayAchievement[] {
   const completionsByDate = new Map<string, Set<string>>();
   for (const c of completions) {
@@ -122,7 +123,7 @@ export function calculateDailyAchievements(
     const completedHabitNames: string[] = [];
 
     for (const habit of habits) {
-      if (!isActiveOnDate(habit, current)) continue;
+      if (!isActiveOnDate(habit, current, timeZone)) continue;
 
       if (isCountedAsTargetOnDate(habit, current)) {
         targetCount++;

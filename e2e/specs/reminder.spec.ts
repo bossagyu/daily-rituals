@@ -18,20 +18,6 @@ async function grantNotificationPermission(
   });
 }
 
-/**
- * Convert UTC time "HH:MM:SS" to expected local time "HH:MM"
- * matching the browser's timezone offset logic.
- */
-function utcTimeToExpectedLocal(utcTime: string): string {
-  const [h, m] = utcTime.split(':').map(Number);
-  const offsetMinutes = new Date().getTimezoneOffset() * -1;
-  const totalMinutes =
-    ((h * 60 + m + offsetMinutes) % 1440 + 1440) % 1440;
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
-  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
-}
-
 test.describe('Reminder Settings', () => {
   test.describe('UI elements', () => {
     test('shows reminder toggle on new habit form', async ({ page }) => {
@@ -181,11 +167,13 @@ test.describe('Reminder Settings', () => {
       context,
       seedHabit,
     }) => {
-      // Seed a habit with reminder_time (stored as UTC TIME in DB)
-      const seedUtcTime = '08:00:00';
+      // reminder_time holds the user's local wall-clock time verbatim
+      // (no UTC conversion on the client), so the seeded value should be
+      // shown as-is on the edit form.
+      const seedLocalTime = '08:00:00';
       const { id } = await seedHabit({
         name: 'E2Eリマインダー編集テスト',
-        reminderTime: seedUtcTime,
+        reminderTime: seedLocalTime,
       });
 
       await grantNotificationPermission(page, context);
@@ -195,11 +183,10 @@ test.describe('Reminder Settings', () => {
       const toggle = page.getByRole('switch');
       await expect(toggle).toHaveAttribute('aria-checked', 'true');
 
-      // Time selector should show the UTC time converted to local time
-      const expectedLocalTime = utcTimeToExpectedLocal(seedUtcTime);
+      // Time selector should show the seeded local time unchanged
       const timeSelector = page.locator('select');
       await expect(timeSelector).toBeVisible();
-      await expect(timeSelector).toHaveValue(expectedLocalTime);
+      await expect(timeSelector).toHaveValue('08:00');
     });
 
     test('disables reminder and saves', async ({

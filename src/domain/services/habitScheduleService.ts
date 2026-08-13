@@ -9,6 +9,7 @@
  */
 
 import type { Habit } from '../models/habit';
+import { getLocalDate } from './timeService';
 
 /**
  * 日付文字列の曜日を返す（0=日曜）。
@@ -20,13 +21,17 @@ function getDayOfWeek(date: string): number {
 
 /**
  * その日付の時点で習慣が存在し、まだアーカイブされていないか。
+ *
+ * createdAt/archivedAt は UTC のタイムスタンプだが、date はユーザーの
+ * ローカル日付なので、timeZone を使って両者を同じ基準に揃えてから比較する。
  */
-export function isActiveOnDate(habit: Habit, date: string): boolean {
-  // TODO(Phase 3): createdAt は UTC 日付、date はローカル日付。負のUTCオフセットの
-  // 地域では作成当日に習慣が表示されない。profiles.timezone 導入後にユーザーTZ基準へ移行する。
-  if (date < habit.createdAt.slice(0, 10)) return false;
+export function isActiveOnDate(habit: Habit, date: string, timeZone: string): boolean {
+  if (date < getLocalDate(new Date(habit.createdAt), timeZone)) return false;
 
-  if (habit.archivedAt !== null && date > habit.archivedAt.slice(0, 10)) {
+  if (
+    habit.archivedAt !== null &&
+    date > getLocalDate(new Date(habit.archivedAt), timeZone)
+  ) {
     return false;
   }
 

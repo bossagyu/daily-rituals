@@ -3,7 +3,7 @@ import {
   getLocalDate,
   getLocalTime,
   getLocalDayOfWeek,
-  getWeekStartSunday,
+  getWeekStartMonday,
   addDays,
   floorToSlot,
   isValidTimeZone,
@@ -60,14 +60,19 @@ describe('getLocalDayOfWeek', () => {
   });
 });
 
-describe('getWeekStartSunday', () => {
-  it('日曜始まりの週開始日を返す', () => {
-    // 2026-03-12 は木曜。直前の日曜は 03-08
-    expect(getWeekStartSunday(new Date('2026-03-12T03:00:00Z'), TOKYO)).toBe('2026-03-08');
+describe('getWeekStartMonday', () => {
+  it('月曜始まりの週開始日を返す', () => {
+    // 2026-03-12 は木曜。直前の月曜は 03-09
+    expect(getWeekStartMonday(new Date('2026-03-12T03:00:00Z'), TOKYO)).toBe('2026-03-09');
   });
 
-  it('日曜当日はその日を返す', () => {
-    expect(getWeekStartSunday(new Date('2026-03-08T03:00:00Z'), TOKYO)).toBe('2026-03-08');
+  it('日曜は前の月曜を返す', () => {
+    // 2026-03-08 は日曜。その週の月曜は 03-02
+    expect(getWeekStartMonday(new Date('2026-03-08T03:00:00Z'), TOKYO)).toBe('2026-03-02');
+  });
+
+  it('月曜当日はその日を返す', () => {
+    expect(getWeekStartMonday(new Date('2026-03-09T03:00:00Z'), TOKYO)).toBe('2026-03-09');
   });
 });
 

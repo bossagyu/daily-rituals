@@ -15,6 +15,7 @@ import { useHabits } from '@/hooks/useHabits';
 import { useCompletions } from '@/hooks/useCompletions';
 import { useStreak } from '@/hooks/useStreak';
 import { useTasks } from '@/hooks/useTasks';
+import { useUserTimeZone } from '@/hooks/useUserTimeZone';
 import { isActiveOnDate, isListedOnDate } from '@/domain/services/habitScheduleService';
 import { TodayHabitCard } from '@/ui/components/TodayHabitCard';
 import { TaskCard } from '@/ui/components/TaskCard';
@@ -259,7 +260,8 @@ export function TodayPage() {
   }, [setSearchParams]);
 
   const { refreshSession } = useAuthContext();
-  const { habitRepository, completionRepository, taskRepository } = useRepositories();
+  const { habitRepository, completionRepository, taskRepository, profileRepository } = useRepositories();
+  const timeZone = useUserTimeZone(profileRepository);
   const { habits, isLoading: habitsLoading, error: habitsError, refresh: refreshHabits } = useHabits(habitRepository);
   const { isCompleted, toggleCompletion, loading: completionsLoading, error: completionsError, refreshCompletions } = useCompletions(completionRepository, selectedDate, refreshSession);
   const { getStreak, getWeeklyProgress, refreshStreak } = useStreak(completionRepository, habits, todayStr);
@@ -278,9 +280,9 @@ export function TodayPage() {
     () =>
       habits.filter(
         (habit) =>
-          isActiveOnDate(habit, selectedDate) && isListedOnDate(habit, selectedDate),
+          isActiveOnDate(habit, selectedDate, timeZone) && isListedOnDate(habit, selectedDate),
       ),
-    [habits, selectedDate],
+    [habits, selectedDate, timeZone],
   );
 
   const todayItems = useMemo(

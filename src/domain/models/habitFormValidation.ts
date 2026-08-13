@@ -207,7 +207,7 @@ import type { Habit } from './habit';
 export function habitToFormState(habit: Habit): HabitFormState {
   const reminderEnabled = habit.reminderTime !== null;
   const reminderTime = habit.reminderTime !== null
-    ? habit.reminderTime.substring(0, 5) // "HH:MM:SS" → "HH:MM", stays in UTC
+    ? habit.reminderTime.substring(0, 5) // "HH:MM:SS" → "HH:MM"（ユーザーのローカル時刻）
     : '';
 
   switch (habit.frequency.type) {

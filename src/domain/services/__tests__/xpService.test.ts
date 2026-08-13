@@ -213,6 +213,7 @@ describe('calculateAllCompleteBonuses', () => {
       completions,
       '2026-01-01',
       '2026-01-01',
+      'Asia/Tokyo',
     );
     expect(result).toBe(2); // 1 day * 2 XP
   });
@@ -228,6 +229,7 @@ describe('calculateAllCompleteBonuses', () => {
       completions,
       '2026-01-01',
       '2026-01-01',
+      'Asia/Tokyo',
     );
     expect(result).toBe(0);
   });
@@ -247,6 +249,7 @@ describe('calculateAllCompleteBonuses', () => {
       completions,
       '2026-01-01',
       '2026-01-01',
+      'Asia/Tokyo',
     );
     expect(result).toBe(2);
   });
@@ -263,6 +266,7 @@ describe('calculateAllCompleteBonuses', () => {
       completions,
       '2026-01-01',
       '2026-01-03',
+      'Asia/Tokyo',
     );
     expect(result).toBe(6); // 3 days * 2 XP
   });
@@ -281,6 +285,7 @@ describe('calculateAllCompleteBonuses', () => {
       completions,
       '2026-01-05',
       '2026-01-05',
+      'Asia/Tokyo',
     );
     expect(result).toBe(2);
   });
@@ -296,6 +301,7 @@ describe('calculateAllCompleteBonuses', () => {
       [],
       '2026-01-06',
       '2026-01-06',
+      'Asia/Tokyo',
     );
     expect(result).toBe(0);
   });
@@ -311,7 +317,7 @@ describe('calculateTotalXp', () => {
     const completions = dates.map((date, i) =>
       makeCompletion({ id: `c${i}`, habitId: 'h1', completedDate: date }),
     );
-    const result = calculateTotalXp([habit], completions, '2026-01-01', '2026-01-07');
+    const result = calculateTotalXp([habit], completions, '2026-01-01', '2026-01-07', 'Asia/Tokyo');
     expect(result.basicXp).toBe(7);
     expect(result.streakBonus).toBe(2);
     expect(result.allCompleteBonus).toBe(14); // 7 days * 2
@@ -322,13 +328,13 @@ describe('calculateTotalXp', () => {
   });
 
   it('returns Object.freeze result', () => {
-    const result = calculateTotalXp([], [], '2026-01-01', '2026-01-01');
+    const result = calculateTotalXp([], [], '2026-01-01', '2026-01-01', 'Asia/Tokyo');
     expect(Object.isFrozen(result)).toBe(true);
   });
 
   it('returns zero breakdown when no completions', () => {
     const habit = makeHabit({ id: 'h1' });
-    const result = calculateTotalXp([habit], [], '2026-01-01', '2026-01-07');
+    const result = calculateTotalXp([habit], [], '2026-01-01', '2026-01-07', 'Asia/Tokyo');
     expect(result.basicXp).toBe(0);
     expect(result.streakBonus).toBe(0);
     expect(result.allCompleteBonus).toBe(0);
@@ -351,6 +357,7 @@ describe('calculateTotalXp', () => {
       completions,
       '2026-01-01',
       '2026-01-01',
+      'Asia/Tokyo',
     );
     // Basic XP counts ALL completions
     expect(result.basicXp).toBe(2);

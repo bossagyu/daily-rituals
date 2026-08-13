@@ -163,7 +163,10 @@ CREATE POLICY "Authenticated users can view heartbeats"
 
 判定を UTC 基準からユーザー TZ 基準へ移す。
 
-- `habits` と `profiles.timezone` を join して取得する
+- `habits` を取得し、所有者の `profiles.timezone` を**別クエリで引いて JS 側で結合**する。
+  PostgREST の埋め込み（`profiles!inner(timezone)`）は使えない — 埋め込みは外部キーから関係を
+  解決するが、`habits` と `profiles` の間に FK は無く、両者とも `auth.users` を参照しているだけ
+  だからである（`PGRST200: Could not find a relationship` になる）。実測で確認済み
 - SQL の `.lte('reminder_time', ...)` による絞り込みを外し、`reminder_time IS NOT NULL`
   かつ `archived_at IS NULL` で取得したうえで、ユーザーごとに `timeService` でローカル時刻・
   ローカル日付を算出して判定する

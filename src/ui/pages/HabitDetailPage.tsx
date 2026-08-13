@@ -17,11 +17,6 @@ import {
   habitToFormState,
   toCreateHabitInput,
 } from '@/domain/models/habitFormValidation';
-import {
-  localTimeToUtc,
-  utcToLocalTime,
-  getBrowserTimezoneOffset,
-} from '@/lib/reminderTime';
 import type { HabitFormState } from '@/domain/models/habitFormValidation';
 import type { Habit } from '@/domain/models/habit';
 
@@ -92,15 +87,12 @@ export function HabitDetailPage() {
       setSubmitError(null);
       try {
         const input = toCreateHabitInput(formState, user.id);
-        const reminderTimeUtc = formState.reminderEnabled
-          ? localTimeToUtc(formState.reminderTime, getBrowserTimezoneOffset())
-          : null;
 
         if (formState.reminderEnabled) {
           await ensureSubscription();
         }
 
-        await updateHabit(id, { ...input, reminderTime: reminderTimeUtc });
+        await updateHabit(id, input);
         navigate('/habits');
       } catch (error: unknown) {
         const message =
@@ -199,16 +191,7 @@ export function HabitDetailPage() {
       )}
 
       <HabitForm
-        initialState={(() => {
-          const formInitialState = habitToFormState(habit);
-          const localReminderTime = formInitialState.reminderTime
-            ? utcToLocalTime(formInitialState.reminderTime, getBrowserTimezoneOffset())
-            : '';
-          return {
-            ...formInitialState,
-            reminderTime: localReminderTime,
-          };
-        })()}
+        initialState={habitToFormState(habit)}
         onSubmit={handleSubmit}
         isSubmitting={isSubmitting}
         submitLabel="更新する"
