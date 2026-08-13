@@ -3,6 +3,7 @@ import {
   buildNotificationBody,
   isWeeklyCountMet,
   isScheduledToday,
+  getUtcTimeSlot,
   type HabitRow,
 } from '../send-reminders';
 
@@ -142,5 +143,19 @@ describe('isScheduledToday', () => {
       frequency_value: null,
     };
     expect(isScheduledToday(habit, 1)).toBe(false);
+  });
+});
+
+describe('getUtcTimeSlot', () => {
+  it('returns the slot unchanged when already on a boundary', () => {
+    expect(getUtcTimeSlot(new Date('2026-08-13T09:10:00Z'))).toBe('09:10');
+  });
+
+  it('floors mid-slot minutes down to the slot boundary', () => {
+    expect(getUtcTimeSlot(new Date('2026-08-13T09:14:59Z'))).toBe('09:10');
+  });
+
+  it('handles the end-of-day 23:5x slot without rolling over the hour', () => {
+    expect(getUtcTimeSlot(new Date('2026-08-13T23:59:59Z'))).toBe('23:50');
   });
 });

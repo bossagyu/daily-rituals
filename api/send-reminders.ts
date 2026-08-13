@@ -9,8 +9,9 @@
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import webpush from 'web-push';
+import { getLocalTime, floorToSlot } from '../src/domain/services/timeService';
 
 // --- Constants ---
 
@@ -42,13 +43,12 @@ function getTodayUtc(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
+export function getUtcTimeSlot(instant: Date): string {
+  return floorToSlot(getLocalTime(instant, 'UTC'), NOTIFICATION_WINDOW_MINUTES);
+}
+
 function getCurrentUtcTimeSlot(): string {
-  const now = new Date();
-  const hours = now.getUTCHours();
-  const minutes =
-    Math.floor(now.getUTCMinutes() / NOTIFICATION_WINDOW_MINUTES) *
-    NOTIFICATION_WINDOW_MINUTES;
-  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+  return getUtcTimeSlot(new Date());
 }
 
 function getWeekStartUtc(): string {
@@ -144,7 +144,7 @@ type SendResult = {
 async function sendNotificationsPerUser(
   habitsByUser: ReadonlyMap<string, readonly string[]>,
   incompleteHabits: readonly HabitRow[],
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseClient,
 ): Promise<SendResult> {
   let totalSent = 0;
   let notifiedHabitIds: readonly string[] = [];

@@ -1,6 +1,6 @@
 import type { Habit } from '@/domain/models/habit';
 import type { Completion } from '@/domain/models/completion';
-import { addDays } from './calendarService';
+import { addDays } from './timeService';
 import { isActiveOnDate, isCountedAsTargetOnDate } from './habitScheduleService';
 
 // --- Types ---

@@ -22,6 +22,7 @@ import {
   getMonthRange,
   type AchievementSummary,
 } from '@/domain/services/statsService';
+import { getTodayString } from '@/lib/dateUtils';
 
 export type StatsData = {
   readonly isLoading: boolean;
@@ -29,13 +30,6 @@ export type StatsData = {
   readonly xp: XpBreakdown | null;
   readonly weekly: AchievementSummary | null;
   readonly monthly: AchievementSummary | null;
-};
-
-const padTwo = (n: number): string => String(n).padStart(2, '0');
-
-const getTodayString = (): string => {
-  const now = new Date();
-  return `${now.getFullYear()}-${padTwo(now.getMonth() + 1)}-${padTwo(now.getDate())}`;
 };
 
 const getEarliestHabitDate = (habits: readonly Habit[]): string | null => {
