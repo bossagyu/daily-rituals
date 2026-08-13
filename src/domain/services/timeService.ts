@@ -9,6 +9,13 @@
  *
  * クライアント（src/）と Vercel API Route（api/）の双方がこのファイルを参照する。
  *
+ * ⚠️ このファイルに `@/` エイリアス経由の import や外部依存を追加しないこと。
+ * api/ からは相対パス（../src/domain/services/timeService）で import されており、
+ * Vercel の esbuild バンドルが解決できるのは、このファイルが依存ゼロの自己完結
+ * モジュールだからである。esbuild は tsconfig の paths を確実には解決しないため、
+ * エイリアス import を足すと「型チェックは通るのにデプロイ後に壊れる」状態になる。
+ * 検証済みなのは相対 import のみで、エイリアス経由の解決は未検証。
+ *
  * 実装は Intl.DateTimeFormat ベースであり、分オフセット（getTimezoneOffset）を
  * 使わない。これにより DST が自動的に正しく扱われる。
  */
