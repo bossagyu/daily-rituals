@@ -90,6 +90,36 @@ export async function seedReward(
   return { id: data.id };
 }
 
+export async function getProfileTimezone(userId: string): Promise<string> {
+  const admin = createAdminClient();
+  const { data, error } = await admin
+    .from('profiles')
+    .select('timezone')
+    .eq('id', userId)
+    .single();
+
+  if (error) {
+    throw new Error(`Failed to read profile timezone: ${error.message}`);
+  }
+
+  return data.timezone as string;
+}
+
+export async function setProfileTimezone(
+  userId: string,
+  timezone: string,
+): Promise<void> {
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from('profiles')
+    .update({ timezone })
+    .eq('id', userId);
+
+  if (error) {
+    throw new Error(`Failed to set profile timezone: ${error.message}`);
+  }
+}
+
 export async function cleanupTestData(userId: string): Promise<void> {
   const admin = createAdminClient();
   await admin.from('push_subscriptions').delete().eq('user_id', userId);

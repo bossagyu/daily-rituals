@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import webpush from 'web-push';
 import handler from '../../api/send-reminders';
 import { getLocalDate } from '../../src/domain/services/timeService';
+import { getProfileTimezone, setProfileTimezone } from '../helpers/test-data';
 import {
   SUPABASE_LOCAL_URL,
   SUPABASE_LOCAL_SERVICE_ROLE_KEY,
@@ -27,14 +28,44 @@ import { test, expect } from '../fixtures/base';
  * completions, which would make this test blind to exactly the bug class
  * it exists to catch.
  *
- * A completion is also seeded, dated to the habit owner's *local* today
- * (the test user's profile defaults to Asia/Tokyo — see
- * on_auth_user_created). This exercises `localTodayByHabit`, which is built
- * inside `handler` itself and therefore invisible to the pure-function unit
- * tests: if it were ever computed from a UTC date instead of the owner's
- * timezone, the completion would fail to match and the handler would (wrongly)
- * still consider the habit due, so the `message` assertion below would fail.
+ * A completion is also seeded, dated to the habit owner's *local* today.
+ * This exercises `localTodayByHabit`, which is built inside `handler` itself
+ * and therefore invisible to the pure-function unit tests: if it were ever
+ * computed from a UTC date instead of the owner's timezone, the completion
+ * would fail to match and the handler would (wrongly) still consider the
+ * habit due, so the `message` assertion below would fail.
+ *
+ * The test user's profile is temporarily switched to a timezone picked by
+ * `pickDivergentTimeZone` (see its docstring) so that the owner-local date
+ * and the UTC date are *guaranteed* to differ, regardless of what time of
+ * day this test happens to run. Without that, a UTC-vs-local regression in
+ * `localTodayByHabit` would only be caught during the ~9 daily hours where
+ * the default Asia/Tokyo date happens to disagree with UTC — a detector
+ * that passes or fails depending on the clock is exactly the kind of
+ * "looks like it works" test this branch has run into before.
  */
+
+/**
+ * Picks an IANA timezone whose local calendar date is guaranteed to differ
+ * from the UTC calendar date at `instant`, no matter what time of day it is.
+ *
+ * Reasoning, in minutes since UTC midnight (T, 0–1439):
+ * - Pacific/Kiritimati (UTC+14) rolls the local date forward to the next
+ *   day whenever T + 14h >= 24h, i.e. T >= 600 (10:00 UTC).
+ * - Pacific/Midway (UTC-11) rolls the local date back to the previous day
+ *   whenever T - 11h < 0h, i.e. T < 660 (11:00 UTC).
+ * These two rollover windows — [10:00, 24:00) and [00:00, 11:00) — overlap
+ * on [10:00, 11:00), so their union covers the full 24 hours: whichever one
+ * applies, the local date differs from the UTC date. Splitting the choice
+ * at 10:30 UTC (630 minutes, the overlap's midpoint) keeps a 30-minute
+ * margin from either boundary, which comfortably absorbs the few
+ * milliseconds of drift between this computation and `handler`'s own
+ * `new Date()` call. Neither zone observes DST, so the offset is stable.
+ */
+function pickDivergentTimeZone(instant: Date): string {
+  const utcMinutes = instant.getUTCHours() * 60 + instant.getUTCMinutes();
+  return utcMinutes >= 630 ? 'Pacific/Kiritimati' : 'Pacific/Midway';
+}
 
 type CapturedResponse = {
   statusCode: number;
@@ -68,6 +99,7 @@ const HANDLER_ENV_KEYS = [
 
 test.describe('send-reminders handler smoke test', () => {
   test('runs the real handler against local Supabase without a query/schema error', async ({
+    testUserId,
     seedHabit,
     seedCompletion,
   }) => {
@@ -79,12 +111,16 @@ test.describe('send-reminders handler smoke test', () => {
       reminderTime: '00:00:00',
     });
 
-    // Owner-local "today" (test user's profile timezone defaults to
-    // Asia/Tokyo). Seeding the completion under this date, rather than the
-    // runner's own UTC date, is what makes this test fail if
-    // localTodayByHabit reverts to UTC.
-    const ownerLocalToday = getLocalDate(new Date(), 'Asia/Tokyo');
-    await seedCompletion(habitId, ownerLocalToday);
+    // Force a timezone where owner-local date != UTC date right now (see
+    // pickDivergentTimeZone doc), then restore the profile's original
+    // timezone afterwards. Nothing else in this test suite reads
+    // profiles.timezone from the browser (useTimezoneSync only runs on app
+    // mount, and this test never navigates a page), but we restore
+    // regardless to avoid leaking state into any test that runs after this
+    // one in the same worker.
+    const originalTimezone = await getProfileTimezone(testUserId);
+    const divergentTimeZone = pickDivergentTimeZone(new Date());
+    await setProfileTimezone(testUserId, divergentTimeZone);
 
     const cronSecret = 'e2e-smoke-test-cron-secret';
     // Dummy but well-formed VAPID keypair. The seeded user has no
@@ -105,6 +141,12 @@ test.describe('send-reminders handler smoke test', () => {
     process.env.CRON_SECRET = cronSecret;
 
     try {
+      // Owner-local "today" under the divergent timezone. Seeding the
+      // completion under this date, rather than the runner's own UTC date,
+      // is what makes this test fail if localTodayByHabit reverts to UTC.
+      const ownerLocalToday = getLocalDate(new Date(), divergentTimeZone);
+      await seedCompletion(habitId, ownerLocalToday);
+
       const req = {
         method: 'POST',
         headers: { 'x-cron-secret': cronSecret },
@@ -134,6 +176,7 @@ test.describe('send-reminders handler smoke test', () => {
           process.env[key] = original;
         }
       }
+      await setProfileTimezone(testUserId, originalTimezone);
     }
   });
 });
