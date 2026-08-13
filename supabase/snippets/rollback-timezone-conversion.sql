@@ -14,6 +14,19 @@
 -- reminder_time がさらに UTC オフセット分（例: Asia/Tokyo なら 9 時間）ずれる。
 -- 実行前に対象行の reminder_time をバックアップし、実行後は再実行しないこと。
 --
+-- 【profiles.timezone が順変換時から変わっていないことを確認すること】
+-- 順変換（マイグレーション本体）は ALTER TABLE ... DEFAULT 'Asia/Tokyo' の直後に
+-- 実行されたため、実質すべての行が 'Asia/Tokyo' として変換されている。しかし
+-- その後アプリを起動すると useTimezoneSync がブラウザのタイムゾーンを
+-- profiles.timezone へ書き込む。ユーザーが移動していた場合、この逆変換は
+-- 順変換と異なるオフセットを使ってしまい、戻したはずの値がずれたまま残る。
+-- 二重実行と違い、ずれても気づく手がかりがない。実行前に必ず確認すること:
+--
+--   SELECT DISTINCT timezone FROM profiles;
+--
+-- 'Asia/Tokyo' 以外が含まれる場合、そのユーザーの行は下の式では正しく戻らない。
+-- 順変換時のタイムゾーン（= 'Asia/Tokyo'）を明示して個別に戻すこと。
+--
 -- 【profiles.timezone 列は残すこと】このロールバックは habits.reminder_time
 -- のみを戻すもので、profiles.timezone 列自体をここで DROP してはならない。
 -- 列を落とすと本ロールバック中に user_id ごとの変換係数を失い、後から
