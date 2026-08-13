@@ -69,7 +69,11 @@ pg_cron (10分ごと)
 
 ---
 
-## 5. あなたが対処すべき手順（iPhone 実機での再購読）
+## 5. 手動復旧手順（2026-08-13 時点では不要）
+
+> **この手順はもう必要ない。** PR #142 でアプリ起動時の自動再購読が実装され、通知許可が `granted`
+> である限りデバイス購読は自動で復旧する。以下は自動復旧が働かない場合（通知許可そのものを
+> 拒否している場合など）の予備手順として残す。
 
 1. **ホーム画面に追加した PWA** を開く（Safari のタブ不可。iOS の Web Push はホーム画面 PWA でのみ有効）。
 2. 既存の習慣（例:「日記」）を開く。
@@ -83,11 +87,45 @@ pg_cron (10分ごと)
 
 ---
 
-## 6. 恒久対策（コード改修の提案 / 任意）
+## 6. 恒久対策（実施状況）
 
-- **アプリ起動時の無条件再購読**: サイレント再登録を「ブラウザ購読が無ければ新規 subscribe して DB 登録する」ロジックに拡張すれば、iOS の購読失効から自動復旧できる（通知許可が `granted` の間）。今回の再発の根治策。→ 別 issue/PR を推奨。
-- **設定画面に通知の再登録 UI を追加**: 習慣編集に依存せず購読を貼り直せる導線があると復旧が容易。
-- （参考）調査初期に作成した `supabase/snippets/setup-cron.sql` と設計書の cron SQL 修正は、原因ではなかったが**運用ドキュメントとして有効**なので残置。将来デプロイ URL 変更時などに参照可能。
+### ✅ アプリ起動時の無条件再購読 — 実装済み（PR #142, 2026-08-12 マージ）
+
+`reconcileSubscription`（`src/hooks/pushSubscriptionOperations.ts`）が、ブラウザ購読が無く通知許可が
+`granted` の場合に新規 subscribe して DB へ登録する。これが今回の再発の根治策である。
+
+呼び出しは `usePushSubscriptionReconcile`（`src/hooks/usePushSubscriptionReconcile.ts`）経由で、
+認証済み全ルートを包む `src/ui/layouts/AppLayout.tsx` から行う。**どの画面から起動しても走る**ことが
+要件である点に注意。
+
+> **レビューで見つかった落とし穴（再発防止のため記録）**: 最初の実装では `usePushSubscription` から
+> しか呼んでおらず、そのフックの利用箇所が `NewHabitPage` と `HabitDetailPage` の2つだけだったため、
+> **Today 画面を開くだけでは一度も走らなかった**。つまり本章がまさに*暫定回避策*として書いた
+> 「習慣のリマインダーを触る」とほぼ同じ発火条件にしかなっておらず、本節の恒久対策になっていなかった。
+> CI が全緑だったのは、`reconcileSubscription` 単体のテストはあったのに「どこから呼ばれるか」を
+> 検証するテストが unit・E2E ともに無かったため。現在は `AppLayout` から呼ばれることを検証する
+> テストを置いてある（`src/ui/layouts/__tests__/AppLayout.test.tsx`）。
+>
+> 教訓: **副作用フックは「正しく動くか」だけでなく「正しい場所から呼ばれるか」もテストする。**
+
+**実機確認**: 2026-08-13 に iPhone のホーム画面 PWA で通知が届くことを確認済み。
+
+### ⬜ 設定画面に通知の再登録 UI / テスト通知ボタン — 未実装
+
+習慣編集に依存せず購読を貼り直せる導線と、押した瞬間に届くか分かるテスト通知ボタン。
+`docs/superpowers/plans/2026-08-11-reliability.md` の **Phase 4**（Task 4.3 / 4.6）として設計済み。
+
+### ⬜ 通知パイプラインの可観測性 — 未実装
+
+今回、購読が失効してから気づくまで**2ヶ月半**かかった。cron は succeeded、HTTP は 200、関数は
+正常動作という状態のまま誰にも届かない状況が成立してしまうため、痕跡を残す仕組みが要る。
+`notification_events`（送信・異常時のみ記録）と `system_heartbeats`（cron の生存確認）を
+同じく Phase 4 で設計済み。
+
+### 参考
+
+調査初期に作成した `supabase/snippets/setup-cron.sql` と設計書の cron SQL 修正は、原因ではなかったが
+**運用ドキュメントとして有効**なので残置。将来デプロイ URL 変更時などに参照可能。
 
 ---
 
@@ -95,8 +133,11 @@ pg_cron (10分ごと)
 
 - 送信処理: `api/send-reminders.ts`
 - Service Worker: `src/sw.ts`
+- 購読の再調整: `src/hooks/pushSubscriptionOperations.ts`, `src/hooks/usePushSubscriptionReconcile.ts`
 - 購読フック: `src/hooks/usePushSubscription.ts`
+- 起動時の配線: `src/ui/layouts/AppLayout.tsx`
 - 時刻変換: `src/lib/reminderTime.ts`
 - 設計書: `docs/superpowers/specs/2026-03-21-push-reminder-design.md`
+- 未実装分の設計・計画: `docs/superpowers/specs/2026-08-11-reliability-design.md`, `docs/superpowers/plans/2026-08-11-reliability.md`
 - cron 設定 SQL: `supabase/snippets/setup-cron.sql`
-- 関連 Issue/PR: #71（機能追加）, #73（Vercel 移行）, #74（Edge Function 削除）
+- 関連 Issue/PR: #71（機能追加）, #73（Vercel 移行）, #74（Edge Function 削除）, #142（起動時の自動再購読）
